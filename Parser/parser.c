@@ -73,7 +73,7 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
 
 		if ((line_array[0][0] != '*') && (line_array[0][0] != '.')) { // Ignore comments that start with *
 			// Copy every element's value such as type, name, nodes etc
-			current->type_of_element = line_array[0];
+			current->type_of_element = line_array[0][0];
 			current->name = strdup(&line_array[0][1]);
 
 			current->node_p = strdup(line_array[1]); // Needs to be free'd
