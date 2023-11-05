@@ -1,3 +1,5 @@
+#ifndef PARSER_H
+#define PARSER_H
 #define NUM_OF_ELEMENT_DATA 5
 #define MAX_CHAR_NUM 100
 
@@ -80,3 +82,4 @@ int find_node_pair(NodePair *head, char* node_str);
 
 // Prints every pair in the db (linked list).
 void print_pairs(NodePair *head);
+#ednif
