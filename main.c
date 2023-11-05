@@ -8,13 +8,13 @@ int main(int argc, char* argv[]) {
 
     if (argc != 2) {
         // no input file selected
-        print_error("parser", 1, NULL);
+        print_error(argv[0], 1, NULL);
     }
 
     // Open file
     input_file = fopen(argv[1], "rb");
     if (input_file == NULL) {
-        print_error("parser", 2, NULL);
+        print_error(argv[0], 2, NULL);
     }
 
     parser(input_file, &head, &head_node_pair);

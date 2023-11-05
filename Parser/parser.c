@@ -4,10 +4,9 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
 	char *line = NULL;
 	char **line_array;
 	unsigned long pair=0;
-	size_t len;
-	ssize_t read;
 	Element *current=NULL;
 	int ret_val=-1;
+    int NUM_OF_NODES=0;
 
 	// Create line split 2D array
 	line_array = calloc(NUM_OF_ELEMENT_DATA, sizeof(char*));
@@ -39,12 +38,6 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
 
 		ret_val = fscanf(input_file, "%s %s %s %s\n", line_array[0], line_array[1], line_array[2], line_array[3]);
 
-//		if (line[strlen(line)-1] != '\n') {
-//			// Padding the last line
-//			line = realloc(line, (strlen(line)+1)*sizeof(char));
-//			line[strlen(line)] = '\n';
-//		}
-
 		if ((ret_val == 0) || (ret_val == EOF)) {
 			break;
 		}
@@ -59,11 +52,6 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
 		strToLower(line_array[1]);
 		strToLower(line_array[2]);
 		strToLower(line_array[3]);
-
-
-//		if (remove_spaces(line, line_array) == 0) {
-//			print_error("parser", 4, "Remove spaces in line failed");
-//		}
 
 		if (current != NULL) { // Find the next available free list
 			while (current->next != NULL) {
@@ -82,12 +70,13 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
 			// Calculate the hash and add it to the db, if not found
 			pair = find_node_pair(*head_node_pair, current->node_p);
 			if (pair == -1) {
-				add_node_pair(head_node_pair, hash(line_array[1]), line_array[1]);
+//				add_node_pair(head_node_pair, hash(line_array[1]), line_array[1]);
+                add_node_pair(head_node_pair, strcmp(line_array[1], "0")==0?0:++NUM_OF_NODES, line_array[1]);
 			}
 			pair = find_node_pair(*head_node_pair, current->node_n);
 			if (pair == -1) {
-
-				add_node_pair(head_node_pair, hash(line_array[2]), line_array[2]);
+//                add_node_pair(head_node_pair, hash(line_array[2]), line_array[2]);
+				add_node_pair(head_node_pair, strcmp(line_array[2], "0")==0?0:++NUM_OF_NODES, line_array[2]);
 			}
 			current->value = strtod(line_array[3], NULL);
 		}
@@ -106,13 +95,6 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
 }
 
 void get_analysis_type(char* line, AnalysisType **type_struct) {
-	AnalysisType *current = NULL;
-
-	if (!*type_struct) {
-		*type_struct = calloc(1, sizeof(AnalysisType));
-	}
-	
-	current = *type_struct;
 }
 
 int find_node_pair(NodePair *head, char* node_str) {
@@ -146,30 +128,6 @@ int add_node_pair(NodePair **head, unsigned long hash_num, char* node_str) {
 	current->hash_node_num = hash_num;
 	current->node_str = strdup(node_str);
 	return 1;
-}
-
-int remove_spaces(char *line, char **line_array) {
-	int i=0, start=0, end, j=0;
-	
-	while (i<strlen(line)) {
-		if ((line[i] == ' ') || (line[i] == '\n') || (line[i] == '\t')) {
-			if (i+1 < strlen(line)) {
-				if (line[i+1] == ' ') {
-					i++;
-					continue;
-				}
-			}
-			end = i-1;
-			line_array[j] = strncpy(line_array[j], &line[start], end-start+1);
-			j++;
-			start = i+1;
-		}
-		if (j>=4) {
-			return 1;
-		}
-		i++;
-	}
-	return 0;
 }
 
 unsigned long hash(char * str) {

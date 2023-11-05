@@ -61,10 +61,6 @@ void print_error (char* program_name, int error_code, char* comment);
 // Free up any memory used.
 void free_mem (char** lines, Element *head, NodePair *head_pair);
 
-// Takes a line from the file and splits it in a 2D matrix, so its easier to split it afterwards.
-// Returns 1 on success and 0 on error.
-int remove_spaces(char *line, char **line_array);
-
 // Prints the linked list with the elements.
 void print_list(Element *head);
 
