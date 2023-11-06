@@ -52,7 +52,8 @@ struct analysis_type {
 typedef struct analysis_type AnalysisType;
 
 // Main parser function. It calls every other function here.
-void parser(FILE *input_file, Element **head, NodePair **head_node_pair);
+// Returns the total number of nodes uppon completion, unless it exits to console.
+int parser(FILE *input_file, Element **head, NodePair **head_node_pair);
 
 // Get analysis type from line string
 void get_analysis_type(char* line, AnalysisType **type_struct);
@@ -82,4 +83,4 @@ int find_node_pair(NodePair *head, char* node_str);
 
 // Prints every pair in the db (linked list).
 void print_pairs(NodePair *head);
-#ednif
+#endif

@@ -1,6 +1,6 @@
 #include "parser.h"
 
-void parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
+int parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
 	char *line = NULL;
 	char **line_array;
 	unsigned long pair=0;
@@ -92,6 +92,7 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
 	}
 	free(line);
 	free_mem(line_array, NULL, NULL);
+	return (NUM_OF_NODES);
 }
 
 void get_analysis_type(char* line, AnalysisType **type_struct) {
@@ -207,28 +208,25 @@ void print_error (char* program_name ,int error_code, char* comment) {
 	switch (error_code) {
 		case 1: { // No input file selected
 			fprintf(stderr, "\n%s:\terror %d:\tNo input file selected!\n", program_name, error_code);
-			exit(-1);
 			break;
 		}
 		case 2: { // No file read
 			fprintf(stderr, "\n%s:\terror %d:\tInput file couldn't be opened!\n", program_name, error_code);
-			exit(-2);
 			break;
 		}
 		case 3: { // No memory
 			fprintf(stderr, "\n%s:\terror %d:\tNot enough memory!\n", program_name, error_code);
 			fprintf(stderr, "\t\tComment: %s\n", comment);
-			exit(-3);
 			break;
 		}
 		case 4: {
 			fprintf(stderr, "\n%s:\terror %d:\tGeneric error!\n", program_name, error_code);
 			fprintf(stderr, "\t\tComment: %s\n", comment);
-			exit(-4);
 			break;
 		}
 		default: {
 			break;
 		}
 	}
+	exit(-error_code);
 }
