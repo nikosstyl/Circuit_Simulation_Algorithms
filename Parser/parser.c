@@ -1,12 +1,13 @@
 #include "parser.h"
 
-int parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
+RetHelper parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
 	char *line = NULL;
 	char **line_array;
 	unsigned long pair=0;
 	Element *current=NULL;
 	int ret_val=-1;
     int NUM_OF_NODES=0;
+	RetHelper ret = {0};
 
 	// Create line split 2D array
 	line_array = calloc(NUM_OF_ELEMENT_DATA, sizeof(char*));
@@ -71,14 +72,29 @@ int parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
 			pair = find_node_pair(*head_node_pair, current->node_p);
 			if (pair == -1) {
 //				add_node_pair(head_node_pair, hash(line_array[1]), line_array[1]);
-                add_node_pair(head_node_pair, strcmp(line_array[1], "0")==0?0:++NUM_OF_NODES, line_array[1]);
+                add_node_pair(head_node_pair, strcmp(line_array[1], "0")==0?0:++ret.node_num, line_array[1]);
 			}
 			pair = find_node_pair(*head_node_pair, current->node_n);
 			if (pair == -1) {
 //                add_node_pair(head_node_pair, hash(line_array[2]), line_array[2]);
-				add_node_pair(head_node_pair, strcmp(line_array[2], "0")==0?0:++NUM_OF_NODES, line_array[2]);
+				add_node_pair(head_node_pair, strcmp(line_array[2], "0")==0?0:++ret.node_num, line_array[2]);
 			}
 			current->value = strtod(line_array[3], NULL);
+
+			// Distinguish m1 and m2 elements
+			switch (current->type_of_element) {
+				case 'r': {}
+				case 'c': {}
+				case 'i': {
+					ret.m1++;
+					break;
+				}
+				case 'l':{}
+				case 'v':{
+					ret.m2++;
+					break;
+				}
+			}
 		}
 		else if (line[0] == '.') {
 			// Has to be implemented
@@ -92,7 +108,7 @@ int parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
 	}
 	free(line);
 	free_mem(line_array, NULL, NULL);
-	return (NUM_OF_NODES);
+	return (ret);
 }
 
 void get_analysis_type(char* line, AnalysisType **type_struct) {

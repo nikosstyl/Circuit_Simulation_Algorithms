@@ -5,6 +5,7 @@ build/
 CMakeLists.txt
 cmake-build-debug/
 .idea/
+.clang-format
 
 #Ignore thumbnails created by Windows
 Thumbs.db
@@ -37,3 +38,4 @@ _ReSharper*/
 .vscode/
 #Nuget packages folder
 packages/
+

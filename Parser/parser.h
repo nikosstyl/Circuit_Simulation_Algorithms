@@ -51,9 +51,18 @@ struct analysis_type {
 };
 typedef struct analysis_type AnalysisType;
 
+// Struct that holds information about different
+// quantities.
+struct ret_helper {
+	int node_num;
+	int m1;
+	int m2;
+};
+typedef struct ret_helper RetHelper;
+
 // Main parser function. It calls every other function here.
 // Returns the total number of nodes uppon completion, unless it exits to console.
-int parser(FILE *input_file, Element **head, NodePair **head_node_pair);
+RetHelper parser(FILE *input_file, Element **head, NodePair **head_node_pair);
 
 // Get analysis type from line string
 void get_analysis_type(char* line, AnalysisType **type_struct);

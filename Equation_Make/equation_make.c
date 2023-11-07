@@ -22,6 +22,9 @@ int equation_make(Element *head, NodePair *pair_head, int nodes_num) {
 
 	// Fill A matrix for debug (reduced incidence matrix)
 	for (current = head,i=0;current->next != NULL;current=current->next,i++) {
+
+//		if (current->type_of_element);
+
 		hash_p = find_node_pair(pair_head, current->node_p);
 		if (hash_p != 0) {
 			A[hash_p-1][i] = +1;
