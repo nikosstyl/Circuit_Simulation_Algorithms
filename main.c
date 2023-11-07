@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
 
 	printf("\nM1 elements: %d\nM2 elements: %d\n\n", ret.m1, ret.m2);
 
-	equation_make(head, head_node_pair, ret.node_num);
+	equation_make(head, head_node_pair, ret);
 
     fclose(input_file);
     fflush(stdout);

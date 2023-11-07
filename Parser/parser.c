@@ -6,7 +6,6 @@ RetHelper parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
 	unsigned long pair=0;
 	Element *current=NULL;
 	int ret_val=-1;
-    int NUM_OF_NODES=0;
 	RetHelper ret = {0};
 
 	// Create line split 2D array
