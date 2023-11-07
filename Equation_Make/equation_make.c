@@ -1,133 +1,117 @@
-#include "equation_make.h"
+#include "parser.h"
+#include <stdlib.h>
+#include <stdio.h>
 
-int equation_make(Element *head, NodePair *pair_head, RetHelper helper) {
-	Element *current = NULL;
-	double **A=NULL, *B=NULL; // A[(nodes)+m2][(nodes)+m2] B[(nodes)+m2]
-	int i=0, j=0;
+short int *create_matrix(NodePair *HashTable, Element *Element_list){
+
+    Element *current = NULL;
+	short int **A1=NULL, **A2 = NULL; // A[nodes_num][elements_num]
+	int elements_number=0;
+	int i=0;
 	int hash_p=-1, hash_n=-1;
+    unsigned long group1 = el_total_size - group2_size;
 
-	if (!head) {
+    if (!Element_list) {
 		print_error("equation_make", 4, "Element list head empty");
 	}
 
-	// Create the matrices needed for the simulation
-	A = calloc(helper.node_num+helper.m2, sizeof(double *));
-	if (!A) {
-		print_error("equation_make", 3, "Matrix A couldn't be created");
-	}
-	for (i=0;i<helper.node_num+helper.m2;i++) {
-		A[i] = calloc(helper.node_num+helper.m2, sizeof(double));
-		if (!A[i]) {
-			print_error("equation_make", 3, "Matrix A inside coulnd't be created");
-		}
-	}
-	B = calloc(helper.node_num+helper.m2, sizeof(double));
-	if (!B) {
-		print_error("equation_make", 3, "Matrix B couldn't be created");
-	}
+    if(amount_of_nodes-1 > 0){
+        A1 = calloc(amount_of_nodes-1, sizeof(short int *));
+        if(A1 == NULL){
+            printf("Malloc failed. Ending.\n");
+            return NULL;
+        }
+        A2 = calloc(amount_of_nodes-1, sizeof(short int *));
+        if(A2 == NULL){
+            printf("Malloc failed. Ending.\n");
+            return NULL;
+        }
+        for (i=0;i<amount_of_nodes-1;i++){
+            if(el_total_size-group2_size>0){
+                A1[i] = calloc((el_total_size-group2_size), sizeof(short int));
+                for(i =0; i < amount_of_nodes-1; i++){
+                    if(A1[i] = NULL){
+                        printf("Malloc failed. Ending.\n");
+                        free(A1);
+                        return NULL;
+                    }
+                }
+            }
+            else{
+                free(A1);
+            }    
+        }
+        for(i=0;i<amount_of_nodes-1;i++){
+            if(group2_size>0){
+                A2[i] = calloc((group2_size), sizeof(short int));
+                if(*A2 = NULL){
+                    printf("Malloc failed. Ending.\n");
+                    free(A2);
+                    return NULL;
+                }
+            }
+            else{
+                free(A2);
+            }    
+        }    
+    }    
 
-	// Fill A matrix
-	i=0;
-	j=0;
-	for (current = head;current->next != NULL;current=current->next) {
+	// Fill A matrix for debug (reduced incidence matrix)
+	int i=0;
+	int j=0;
+	for (current = Element_list;current->next != NULL;current=current->next) {
+
 		// Differentiation using m1 and m2
+//		if (current->type_of_element);
 
-		hash_p = find_node_pair(pair_head, current->node_p);
-		hash_n = find_node_pair(pair_head, current->node_n);
-
-		switch (current->type_of_element) {
-			case 'r': {
-				if ((hash_p !=0) && (hash_n != 0)) {
-					A[hash_p-1][hash_p-1] += (1 / current->value);
-					A[hash_p-1][hash_n-1] += -(1 / current->value);
-					A[hash_n-1][hash_p-1] += -(1 / current->value);
-					A[hash_n-1][hash_n-1] += (1 / current->value);
-				}
-				else if (hash_n == 0) {
-					A[hash_p-1][hash_p-1] += (1 / current->value);
-				}
-				else {
-					A[hash_n-1][hash_n-1] += (1 / current->value);
-				}
-				break;
+		hash_p = find_node_pair(HashTable, current->node_p);
+		if (hash_p != 0) {
+//			A[hash_p-1][i] = +1;
+			if (!current->group_flag) {
+					A1[hash_p-1][i] = +1;
 			}
-			case 'i': {
-				if ((hash_p != 0) && (hash_n != 0)) {
-					B[hash_p-1] = -(current->value);
-					B[hash_n-1] = current->value;
+            else{
+                A2[hash_p-1][j] = +1;
 				}
-				else if (hash_n == 0) {
-					B[hash_p-1] = -(current->value);
-				}
-				else {
-					B[hash_n-1] = current->value;
-				}
-				break;
-			}
-			case 'l': {
-				// For inductors, treat them as a 0-volt voltage source
-				// in DC analysis (often called and .op)
-			}
-			case 'v': {
-				if ((hash_p != 0) && (hash_n != 0)) {
-					A[helper.node_num + i][hash_p-1] = +1;
-					A[helper.node_num + i][hash_n-1] = -1;
-					A[hash_p-1][helper.node_num + i] = +1;
-					A[hash_n-1][helper.node_num + i] = -1;
-				}
-				else if (hash_n ==0) {
-					A[helper.node_num + i][hash_p-1] = +1;
-					A[hash_p-1][helper.node_num + i] = +1;
-				}
-				else {
-					A[helper.node_num + i][hash_n-1] = -1;
-					A[helper.node_num + i][hash_n-1] = -1;
-				}
-				B[helper.node_num+i] = current->type_of_element=='v' ? current->value : 0;
-				i++;
-				break;
-			}
-			case 'c': {
-				// Skip for DC analysis
-				break;
 			}
 		}
-	}
 
-	printf("\nSysthma eksiswsewn:\n");
-	for (i=0;i<helper.node_num+helper.m2;i++) {
-		for (j=0;j<helper.node_num+helper.m2;j++) {
-			if (i<helper.node_num && j<helper.node_num) {
-				printf("%s%5.2lf ", RED, A[i][j]);
+		hash_n = find_node_pair(HashTable, current->node_n);
+		if (hash_n != 0) {
+			if (!current->group_flag) {
+					A1[hash_p-1][i] = +1;
 			}
-			else if (i>=helper.node_num && j<helper.node_num) {
-				printf("%s%5.2lf ", BLUE, A[i][j]);
+            else{
+                A2[hash_p-1][j] = +1;
 			}
-			else if (i<helper.node_num && j>=helper.node_num) {
-				printf("%s%5.2lf ", GREEN, A[i][j]);
-			}
-			else{
-				printf("%s%5.2lf ", YELLOW, A[i][j]);
-			}
+			
 		}
-		printf(" %s%5.2lf\n", RESET, B[i]);
+
+	// Print A1 matrix
+	for (i=0;i<amount_of_nodes;i++) {
+		for (int j=0;j<el_total_size-group2_size;j++) {
+			printf("%3d ", A1[i][j]);
+		}
+		printf("\n");
 	}
 	printf("\n");
 
+
+	// Print A2 matrix
+	for (i=0;i<amount_of_nodes;i++) {
+		for (int j=0;j<group2_size;j++) {
+			printf("%3d ", A2[i][j]);
+		}
+		printf("\n");
+	}
+
 	// Free Mem
-	for (i=0;i<helper.node_num+helper.m2;i++) {
-		free(A[i]);
+	for (i=0;i<amount_of_nodes;i++) {
+		free(A1[i]);
+		free(A2[i]);
 	}
-	free(A);
-	free(B);
+	free(A1);
+	free(A2);
 
-	return -1;
-}
-
-int get_list_length (Element *head) {
-	int i=0;
-	for (Element *current=head;current!=NULL;current=current->next) {
-		i++;
-	}
-	return(i-1);
+    return 0;
 }
