@@ -1,12 +1,16 @@
 #include "parser.h"
 
-RetHelper parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
+void parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
 	char *line = NULL;
 	char **line_array;
 	unsigned long pair=0;
+	size_t len;
+	//ssize_t read;
 	Element *current=NULL;
 	int ret_val=-1;
-	RetHelper ret = {0};
+	//counts the amount of elements that belong to group2
+	unsigned int group2_el = 0;			
+	unsigned long elements_read = 0;
 
 	// Create line split 2D array
 	line_array = calloc(NUM_OF_ELEMENT_DATA, sizeof(char*));
@@ -38,6 +42,12 @@ RetHelper parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
 
 		ret_val = fscanf(input_file, "%s %s %s %s\n", line_array[0], line_array[1], line_array[2], line_array[3]);
 
+//		if (line[strlen(line)-1] != '\n') {
+//			// Padding the last line
+//			line = realloc(line, (strlen(line)+1)*sizeof(char));
+//			line[strlen(line)] = '\n';
+//		}
+
 		if ((ret_val == 0) || (ret_val == EOF)) {
 			break;
 		}
@@ -53,6 +63,11 @@ RetHelper parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
 		strToLower(line_array[2]);
 		strToLower(line_array[3]);
 
+
+//		if (remove_spaces(line, line_array) == 0) {
+//			print_error("parser", 4, "Remove spaces in line failed");
+//		}
+
 		if (current != NULL) { // Find the next available free list
 			while (current->next != NULL) {
 				current = current->next;
@@ -66,34 +81,24 @@ RetHelper parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
 
 			current->node_p = strdup(line_array[1]); // Needs to be free'd
 			current->node_n = strdup(line_array[2]);
-
+			current->group_flag = 0;	//set the element's group flag to 0 proactively and check immediately after if it needs to change. 
+										//If it changes increment by 1 the amount of elements in group2
+			elements_read++;
+			if(current->type_of_element == 'v' || current->type_of_element == 'l'){
+				group2_el++;
+				current->group_flag = 1;	
+			}		
 			// Calculate the hash and add it to the db, if not found
 			pair = find_node_pair(*head_node_pair, current->node_p);
 			if (pair == -1) {
-//				add_node_pair(head_node_pair, hash(line_array[1]), line_array[1]);
-                add_node_pair(head_node_pair, strcmp(line_array[1], "0")==0?0:++ret.node_num, line_array[1]);
+				add_node_pair(head_node_pair, hash(line_array[1]), line_array[1]);
 			}
 			pair = find_node_pair(*head_node_pair, current->node_n);
 			if (pair == -1) {
-//                add_node_pair(head_node_pair, hash(line_array[2]), line_array[2]);
-				add_node_pair(head_node_pair, strcmp(line_array[2], "0")==0?0:++ret.node_num, line_array[2]);
+
+				add_node_pair(head_node_pair, hash(line_array[2]), line_array[2]);
 			}
 			current->value = strtod(line_array[3], NULL);
-
-			// Distinguish m1 and m2 elements
-			switch (current->type_of_element) {
-				case 'r': {}
-				case 'c': {}
-				case 'i': {
-					ret.m1++;
-					break;
-				}
-				case 'l':{}
-				case 'v':{
-					ret.m2++;
-					break;
-				}
-			}
 		}
 		else if (line[0] == '.') {
 			// Has to be implemented
@@ -107,10 +112,18 @@ RetHelper parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
 	}
 	free(line);
 	free_mem(line_array, NULL, NULL);
-	return (ret);
+	group2_size = group2_el;
+	el_total_size = elements_read;
 }
 
 void get_analysis_type(char* line, AnalysisType **type_struct) {
+	AnalysisType *current = NULL;
+
+	if (!*type_struct) {
+		*type_struct = calloc(1, sizeof(AnalysisType));
+	}
+	
+	current = *type_struct;
 }
 
 int find_node_pair(NodePair *head, char* node_str) {
@@ -143,7 +156,32 @@ int add_node_pair(NodePair **head, unsigned long hash_num, char* node_str) {
 	}
 	current->hash_node_num = hash_num;
 	current->node_str = strdup(node_str);
+	amount_of_nodes++;
 	return 1;
+}
+
+int remove_spaces(char *line, char **line_array) {
+	int i=0, start=0, end, j=0;
+	
+	while (i<strlen(line)) {
+		if ((line[i] == ' ') || (line[i] == '\n') || (line[i] == '\t')) {
+			if (i+1 < strlen(line)) {
+				if (line[i+1] == ' ') {
+					i++;
+					continue;
+				}
+			}
+			end = i-1;
+			line_array[j] = strncpy(line_array[j], &line[start], end-start+1);
+			j++;
+			start = i+1;
+		}
+		if (j>=4) {
+			return 1;
+		}
+		i++;
+	}
+	return 0;
 }
 
 unsigned long hash(char * str) {
@@ -223,25 +261,28 @@ void print_error (char* program_name ,int error_code, char* comment) {
 	switch (error_code) {
 		case 1: { // No input file selected
 			fprintf(stderr, "\n%s:\terror %d:\tNo input file selected!\n", program_name, error_code);
+			exit(-1);
 			break;
 		}
 		case 2: { // No file read
 			fprintf(stderr, "\n%s:\terror %d:\tInput file couldn't be opened!\n", program_name, error_code);
+			exit(-2);
 			break;
 		}
 		case 3: { // No memory
 			fprintf(stderr, "\n%s:\terror %d:\tNot enough memory!\n", program_name, error_code);
 			fprintf(stderr, "\t\tComment: %s\n", comment);
+			exit(-3);
 			break;
 		}
 		case 4: {
 			fprintf(stderr, "\n%s:\terror %d:\tGeneric error!\n", program_name, error_code);
 			fprintf(stderr, "\t\tComment: %s\n", comment);
+			exit(-4);
 			break;
 		}
 		default: {
 			break;
 		}
 	}
-	exit(-error_code);
 }
