@@ -2,8 +2,9 @@
 
 int equation_make(Element *head, NodePair *pair_head, RetHelper helper) {
 	Element *current = NULL;
-	short int **A1=NULL, **A2=NULL; // A1[nodes_num][m1] A1[nodes_num][m2]
-	double **G_diag=NULL, **C_diag=NULL;
+	short int **A1=NULL, **A2=NULL; // A1[nodes_num][m1] A2[nodes_num][m2]
+	double **G_diag=NULL, **C_diag=NULL, **L_diag=NULL; // G[m1][m1] C[m1][m1] L[m2][m2]
+	double *s1=NULL, *s2=NULL; // s1[m1] s2[m2]
 	int i=0, j=0;
 	int hash_p=-1, hash_n=-1;
 
@@ -59,6 +60,30 @@ int equation_make(Element *head, NodePair *pair_head, RetHelper helper) {
 		}
 	}
 
+	// Create L matrix
+	L_diag = calloc(helper.m2, sizeof(double *));
+	if (!L_diag) {
+		print_error("equation_make", 3, "L array error!");
+	}
+	for (i=0;i<helper.m2;i++) {
+		L_diag[i] = calloc((helper.m2), sizeof(double));
+		if (!L_diag[i]) {
+			print_error("equation_make", 3, "Internal L array error!");
+		}
+	}
+
+	// Create s1 matrix
+	s1 = calloc(helper.m1, sizeof(double));
+	if (!s1) {
+		print_error("equation_make", 3, "S1 array error!");
+	}
+
+	// Create s2 matrix
+	s2 = calloc(helper.m2, sizeof(double));
+	if (!s2) {
+		print_error("equation_make", 3, "S2 array error!");
+	}
+
 	// Fill A matrix for debug (reduced incidence matrix)
 	i=0;
 	j=0;
@@ -79,11 +104,21 @@ int equation_make(Element *head, NodePair *pair_head, RetHelper helper) {
 					}
 				}
 				case 'i': {
+					if (current->type_of_element == 'i') {
+						 s1[i] = current->value;
+					}
 					A1[hash_p-1][i] = +1;
 					break;
 				}
-				case 'l':{}
+				case 'l':{
+					if (current->type_of_element == 'l') {
+						 L_diag[j][j] = current->value;
+					}
+				}
 				case 'v':{
+					if (current->type_of_element == 'v') {
+						 s2[j] = current->value;
+					}
 					A2[hash_p-1][j] = +1;
 					break;
 				}
@@ -104,11 +139,21 @@ int equation_make(Element *head, NodePair *pair_head, RetHelper helper) {
 					}
 				}
 				case 'i': {
+					if (current->type_of_element == 'i') {
+						s1[i] = current->value;
+					}
 					A1[hash_n-1][i++] = -1;
 					break;
 				}
-				case 'l':{}
+				case 'l':{
+					if (current->type_of_element == 'l') {
+						L_diag[j][j] = current->value;
+					}
+				}
 				case 'v':{
+					if (current->type_of_element == 'v') {
+						s2[j] = current->value;
+					}
 					A2[hash_n-1][j++] = -1;
 					break;
 				}
@@ -120,7 +165,7 @@ int equation_make(Element *head, NodePair *pair_head, RetHelper helper) {
 	// Print A1 matrix
 	printf("\nA1:\n");
 	for (i=0;i<helper.node_num;i++) {
-		for (int j=0;j<helper.m1;j++) {
+		for (j=0;j<helper.m1;j++) {
 			printf("%3d ", A1[i][j]);
 		}
 		printf("\n");
@@ -131,7 +176,7 @@ int equation_make(Element *head, NodePair *pair_head, RetHelper helper) {
 	// Print A2 matrix
 	printf("\nA2:\n");
 	for (i=0;i<helper.node_num;i++) {
-		for (int j=0;j<helper.m2;j++) {
+		for (j=0;j<helper.m2;j++) {
 			printf("%3d ", A2[i][j]);
 		}
 		printf("\n");
@@ -167,6 +212,45 @@ int equation_make(Element *head, NodePair *pair_head, RetHelper helper) {
 	}
 	printf("\n");
 
+	// Print L matrix
+	printf("\nL_diag:\n");
+	for (i=0;i<helper.m2;i++) {
+		for (j=0;j<helper.m2;j++) {
+			if(L_diag[i][j] != 0) {
+				printf("\033[32m%12.4lf\033[0m ", L_diag[i][j]);
+			}
+			else {
+				printf("\033[31m%12.4lf\033[0m ", L_diag[i][j]);
+			}
+		}
+		printf("\n");
+	}
+	printf("\n");
+
+	// Print S1 matrix
+	printf("\nS1:\n");
+	for(i=0;i<helper.m1;i++) {
+		if(s1[i] != 0) {
+			printf("\033[32m%3.1lf\033[0m\n", s1[i]);
+		}
+		else {
+			printf("\033[31m%3.1lf\033[0m\n", s1[i]);
+		}
+	}
+	printf("\n");
+
+	// Print S2 matrix
+	printf("\nS2:\n");
+	for(i=0;i<helper.m2;i++) {
+		if(s2[i] != 0) {
+			printf("\033[32m%3.1lf\033[0m\n", s2[i]);
+		}
+		else {
+			printf("\033[31m%3.1lf\033[0m\n", s2[i]);
+		}
+	}
+	printf("\n");
+
 	// Free Mem
 	for (i=0;i<helper.node_num;i++) {
 		free(A1[i]);
@@ -176,10 +260,16 @@ int equation_make(Element *head, NodePair *pair_head, RetHelper helper) {
 		free(G_diag[i]);
 		free(C_diag[i]);
 	}
+	for(i=0;i<helper.m2;i++) {
+		free(L_diag[i]);
+	}
 	free(A1);
 	free(A2);
 	free(G_diag);
 	free(C_diag);
+	free(L_diag);
+	free(s1);
+	free(s2);
 
 	return -1;
 }
