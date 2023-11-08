@@ -23,8 +23,8 @@ int main(int argc, char* argv[]) {
 
 //	printf("List length: %d\n\n", get_list_length(head));
 
-//    print_list(head);
-//    print_pairs(head_node_pair);
+    print_list(head);
+    print_pairs(head_node_pair);
 
 //	printf("\nM1 elements: %d\nM2 elements: %d\n\n", ret.m1, ret.m2);
 
