@@ -3,7 +3,7 @@
 int equation_make(Element *head, NodePair *pair_head, RetHelper helper) {
 	Element *current = NULL;
 	short int **A1=NULL, **A2=NULL; // A1[nodes_num][m1] A1[nodes_num][m2]
-	double **G_diag=NULL;
+	double **G_diag=NULL, **C_diag=NULL;
 	int i=0, j=0;
 	int hash_p=-1, hash_n=-1;
 
@@ -47,27 +47,36 @@ int equation_make(Element *head, NodePair *pair_head, RetHelper helper) {
 		}
 	}
 
+	// Create C matrix
+	C_diag = calloc(helper.m1, sizeof(double *));
+	if (!C_diag) {
+		print_error("equation_make", 3, "C array error!");
+	}
+	for (i=0;i<helper.m1;i++) {
+		C_diag[i] = calloc((helper.m1), sizeof(double));
+		if (!C_diag[i]) {
+			print_error("equation_make", 3, "Internal C array error!");
+		}
+	}
+
 	// Fill A matrix for debug (reduced incidence matrix)
 	i=0;
 	j=0;
 	for (current = head;current->next != NULL;current=current->next) {
-
 		// Differentiation using m1 and m2
-//		if (current->type_of_element);
 
 		hash_p = find_node_pair(pair_head, current->node_p);
 		if (hash_p != 0) {
-//			A[hash_p-1][i] = +1;
 			switch (current->type_of_element) {
 				case 'r': {
-//					if (current->type_of_element == 'r') {
-//						G_diag[i][i] = current->value;
-//					}
+					if (current->type_of_element == 'r') {
+						G_diag[i][i] = current->value;
+					}
 				}
 				case 'c': {
-//					if (current->type_of_element == 'c') {
-//						// C_diag[i][i]
-//					}
+					if (current->type_of_element == 'c') {
+						 C_diag[i][i] = current->value;
+					}
 				}
 				case 'i': {
 					A1[hash_p-1][i] = +1;
@@ -85,14 +94,14 @@ int equation_make(Element *head, NodePair *pair_head, RetHelper helper) {
 		if (hash_n != 0) {
 			switch (current->type_of_element) {
 				case 'r': {
-//					if (current->type_of_element == 'r') {
-//						G_diag[i][i] = current->value;
-//					}
+					if (current->type_of_element == 'r') {
+						G_diag[i][i] = current->value;
+					}
 				}
 				case 'c': {
-//					if (current->type_of_element == 'c') {
-//						// C_diag[i][i]
-//					}
+					if (current->type_of_element == 'c') {
+						C_diag[i][i] = current->value;
+					}
 				}
 				case 'i': {
 					A1[hash_n-1][i++] = -1;
@@ -105,12 +114,6 @@ int equation_make(Element *head, NodePair *pair_head, RetHelper helper) {
 				}
 			}
 		}
-
-#ifdef ORFEAS
-		if(current->type_of_element == 'r') {
-			G_diag[get_component_position(head, current)][get_component_position(head, current)] = current->value;
-		}
-#endif
 	}
 
 
@@ -149,6 +152,21 @@ int equation_make(Element *head, NodePair *pair_head, RetHelper helper) {
 	}
 	printf("\n");
 
+	// Print C matrix
+	printf("\nC_diag:\n");
+	for (i=0;i<helper.m1;i++) {
+		for (j=0;j<helper.m1;j++) {
+			if(C_diag[i][j] != 0) {
+				printf("\033[32m%12.4lf\033[0m ", C_diag[i][j]);
+			}
+			else {
+				printf("\033[31m%12.4lf\033[0m ", C_diag[i][j]);
+			}
+		}
+		printf("\n");
+	}
+	printf("\n");
+
 	// Free Mem
 	for (i=0;i<helper.node_num;i++) {
 		free(A1[i]);
@@ -156,10 +174,12 @@ int equation_make(Element *head, NodePair *pair_head, RetHelper helper) {
 	}
 	for (i=0; i<helper.m1; i++) {
 		free(G_diag[i]);
+		free(C_diag[i]);
 	}
 	free(A1);
 	free(A2);
 	free(G_diag);
+	free(C_diag);
 
 	return -1;
 }
@@ -172,12 +192,3 @@ int get_list_length (Element *head) {
 	return(i-1);
 }
 
-#ifdef ORFEAS
-int get_component_position (Element *head, Element *target) {
-	int i=0;
-	for (Element *current=head;current!=target;current=current->next) {
-		i++;
-	}
-	return(i-1);
-}
-#endif
