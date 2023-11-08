@@ -64,6 +64,10 @@ int equation_make(Element *head, NodePair *pair_head, RetHelper helper) {
 				}
 				break;
 			}
+			case 'l': {
+				// For inductors, treat them as a 0-volt voltage source
+				// in DC analysis (often called and .op)
+			}
 			case 'v': {
 				if ((hash_p != 0) && (hash_n != 0)) {
 					A[helper.node_num + i][hash_p-1] = +1;
@@ -79,16 +83,12 @@ int equation_make(Element *head, NodePair *pair_head, RetHelper helper) {
 					A[helper.node_num + i][hash_n-1] = -1;
 					A[helper.node_num + i][hash_n-1] = -1;
 				}
-				B[helper.node_num+i] = current->value;
+				B[helper.node_num+i] = current->type_of_element=='v' ? current->value : 0;
 				i++;
 				break;
 			}
 			case 'c': {
 				// Skip for DC analysis
-				break;
-			}
-			case 'l': {
-				// Make the inductor a voltage source with 0 volts
 				break;
 			}
 		}
