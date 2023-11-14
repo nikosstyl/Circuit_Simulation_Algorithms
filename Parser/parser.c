@@ -1,6 +1,6 @@
 #include "parser.h"
 
-void parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
+void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelper *ret) {
 	char *line = NULL;
 	char **line_array;
 	unsigned long pair=0;
@@ -91,12 +91,14 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
 			// Calculate the hash and add it to the db, if not found
 			pair = find_node_pair(*head_node_pair, current->node_p);
 			if (pair == -1) {
-				add_node_pair(head_node_pair, hash(line_array[1]), line_array[1]);
+				add_node_pair(head_node_pair, strcmp(line_array[1], "0")==0?0:++ret->amount_of_nodes, line_array[1]);
+				//ret->amount_of_nodes++;
 			}
 			pair = find_node_pair(*head_node_pair, current->node_n);
 			if (pair == -1) {
 
-				add_node_pair(head_node_pair, hash(line_array[2]), line_array[2]);
+				add_node_pair(head_node_pair, strcmp(line_array[2], "0")==0?0:++ret->amount_of_nodes, line_array[2]);
+				//ret->amount_of_nodes++;
 			}
 			current->value = strtod(line_array[3], NULL);
 		}
@@ -112,8 +114,8 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair) {
 	}
 	free(line);
 	free_mem(line_array, NULL, NULL);
-	group2_size = group2_el;
-	el_total_size = elements_read;
+	ret->group2_size = group2_el;
+	ret->el_total_size = elements_read;
 }
 
 void get_analysis_type(char* line, AnalysisType **type_struct) {
@@ -156,7 +158,6 @@ int add_node_pair(NodePair **head, unsigned long hash_num, char* node_str) {
 	}
 	current->hash_node_num = hash_num;
 	current->node_str = strdup(node_str);
-	amount_of_nodes++;
 	return 1;
 }
 
