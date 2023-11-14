@@ -3,7 +3,7 @@ CC = gcc
 CFLAGS = -Wall -I.
 
 # Define the source files and object files
-SRC = main.c Parser/parser.c Equation_Make/equation_make.c
+SRC = main.c Parser/parser.c Parser/equation_make.c
 OBJ = $(SRC:.c=.o)
 
 # Define the executable name
