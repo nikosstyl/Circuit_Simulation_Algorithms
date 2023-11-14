@@ -10,9 +10,9 @@
 
 static const char DC_ANALYSIS[] = ".op";
 static const char SKIP_NEWLINE[] = "%*[^\n]\n";
-volatile unsigned long group2_size = 0;
-volatile unsigned long el_total_size = 0;
-volatile unsigned long int amount_of_nodes = 0;
+unsigned long int group2_size = 0;
+unsigned long int el_total_size = 0;
+unsigned long int amount_of_nodes = 0;
 
 // Struct of an element
 // Data for the simulation
