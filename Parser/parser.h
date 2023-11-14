@@ -10,9 +10,7 @@
 
 static const char DC_ANALYSIS[] = ".op";
 static const char SKIP_NEWLINE[] = "%*[^\n]\n";
-unsigned long int group2_size = 0;
-unsigned long int el_total_size = 0;
-unsigned long int amount_of_nodes = 0;
+
 
 // Struct of an element
 // Data for the simulation
@@ -55,8 +53,15 @@ struct analysis_type {
 };
 typedef struct analysis_type AnalysisType;
 
+struct ret_helper {
+	unsigned long int group2_size;
+	unsigned long int el_total_size;
+	unsigned long int amount_of_nodes;
+};
+typedef struct ret_helper RetHelper;
+
 // Main parser function. It calls every other function here. Returns the amount of elements that belong to group 2.
-void parser(FILE *input_file, Element **head, NodePair **head_node_pair);
+void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelper *ret);
 
 // Get analysis type from line string
 void get_analysis_type(char* line, AnalysisType **type_struct);
@@ -91,4 +96,4 @@ int find_node_pair(NodePair *head, char* node_str);
 // Prints every pair in the db (linked list).
 void print_pairs(NodePair *head);
 
-int create_matrix(NodePair *HashTable, Element *Element_list);
+int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret);
