@@ -53,13 +53,13 @@ int *create_matrix(NodePair *HashTable, Element *Element_list){
         {
         case 'v':
             if(strcmp(current->node_p,"0")!=0){
-                A[hash_p-1][el_total_size-1+group2_size] = A[hash_p-1][el_total_size-1+group2_size] + 1;
-                A[el_total_size-1+group2_size][hash_p-1] = A[el_total_size-1+group2_size][hash_p-1]+1;
+                A[hash_p-1][amount_of_nodes-1+group2_size] = A[hash_p-1][amount_of_nodes-1+group2_size] + 1;
+                A[amount_of_nodes-1+group2_size][hash_p-1] = A[amount_of_nodes-1+group2_size][hash_p-1]+1;
                 b[hash_p-1] = b[hash_p-1]+current->value;
             }
             if(strcmp(current->node_n,"0")!=0){
-                A[hash_n-1][el_total_size-1+group2_size] = A[hash_n-1][el_total_size-1+group2_size]-1;
-                A[el_total_size-1+group2_size][hash_n-1] = A[el_total_size-1+group2_size][hash_n-1]-1;
+                A[hash_n-1][amount_of_nodes-1+group2_size] = A[hash_n-1][amount_of_nodes-1+group2_size]-1;
+                A[amount_of_nodes-1+group2_size][hash_n-1] = A[amount_of_nodes-1+group2_size][hash_n-1]-1;
                 b[hash_n-1] = b[hash_n-1]-current->value;
             }
             break;
