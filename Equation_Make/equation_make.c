@@ -5,113 +5,110 @@
 short int *create_matrix(NodePair *HashTable, Element *Element_list){
 
     Element *current = NULL;
-	short int **A1=NULL, **A2 = NULL; // A[nodes_num][elements_num]
+	double **A=NULL, *b = NULL; // A[nodes_num][elements_num]
 	int elements_number=0;
 	int i=0;
 	int hash_p=-1, hash_n=-1;
-    unsigned long group1 = el_total_size - group2_size;
 
     if (!Element_list) {
 		print_error("equation_make", 4, "Element list head empty");
 	}
 
-    if(amount_of_nodes-1 > 0){
-        A1 = calloc(amount_of_nodes-1, sizeof(short int *));
-        if(A1 == NULL){
-            printf("Malloc failed. Ending.\n");
-            return NULL;
-        }
-        A2 = calloc(amount_of_nodes-1, sizeof(short int *));
-        if(A2 == NULL){
-            printf("Malloc failed. Ending.\n");
-            return NULL;
-        }
-        for (i=0;i<amount_of_nodes-1;i++){
-            if(el_total_size-group2_size>0){
-                A1[i] = calloc((el_total_size-group2_size), sizeof(short int));
-                for(i =0; i < amount_of_nodes-1; i++){
-                    if(A1[i] = NULL){
-                        printf("Malloc failed. Ending.\n");
-                        free(A1);
-                        return NULL;
-                    }
-                }
+    b = calloc(amount_of_nodes-1+group2_size, sizeof(double));
+    if(!b){
+        printf("Something went wrong with stage 1 memory alloc. Exiting.\n");
+        return -1;
+    }
+
+    A = calloc((amount_of_nodes-1)+group2_size, sizeof(double));
+    if(!A){
+        free(b);
+        printf("Something went wrong with stage 1 memory alloc. Exiting.\n");
+        return -1;
+    }
+    for(i=0; i < (amount_of_nodes-1+group2_size); i++){
+        A[i] = calloc(el_total_size,sizeof(double));
+        if(!A[i]){
+            printf("Something went wrong with stage 2 memory alloc. Exiting.\n");
+            for(int j=0; j < i; j++){
+                free(A[j]);
             }
-            else{
-                free(A1);
-            }    
+            free(A);
+            free(b);
+            return -1;
         }
-        for(i=0;i<amount_of_nodes-1;i++){
-            if(group2_size>0){
-                A2[i] = calloc((group2_size), sizeof(short int));
-                if(*A2 = NULL){
-                    printf("Malloc failed. Ending.\n");
-                    free(A2);
-                    return NULL;
-                }
-            }
-            else{
-                free(A2);
-            }    
-        }    
-    }    
+    }
+    for(i=0; i < amount_of_nodes-1+group2_size; i++){
+        b[i] = 0;
+        for(int j =0; j < el_total_size; j ++){
+            A[i][j] = 0;
+        }
+    }
 
-	// Fill A matrix for debug (reduced incidence matrix)
-	int i=0;
-	int j=0;
-	for (current = Element_list;current->next != NULL;current=current->next) {
-
-		// Differentiation using m1 and m2
-//		if (current->type_of_element);
-
-		hash_p = find_node_pair(HashTable, current->node_p);
-		if (hash_p != 0) {
-//			A[hash_p-1][i] = +1;
-			if (!current->group_flag) {
-					A1[hash_p-1][i] = +1;
-			}
-            else{
-                A2[hash_p-1][j] = +1;
-				}
-			}
-		}
-
+    current = Element_list;
+    for(i = 0; i < el_total_size; i++){
+        hash_p = find_node_pair(HashTable, current->node_p);
 		hash_n = find_node_pair(HashTable, current->node_n);
-		if (hash_n != 0) {
-			if (!current->group_flag) {
-					A1[hash_p-1][i] = +1;
-			}
-            else{
-                A2[hash_p-1][j] = +1;
-			}
-			
-		}
+        switch (Element_list->type_of_element)
+        {
+        case 'v':
+            if(strcmp(current->node_p,"0")!=0){
+                A[hash_p-1][el_total_size-1+group2_size] = A[hash_p-1][el_total_size-1+group2_size] + 1;
+                A[el_total_size-1+group2_size][hash_p-1] = A[el_total_size-1+group2_size][hash_p-1]+1;
+                b[hash_p-1] = b[hash_p-1]+current->value;
+            }
+            if(strcmp(current->node_n,"0")!=0){
+                A[hash_n-1][el_total_size-1+group2_size] = A[hash_n-1][el_total_size-1+group2_size]-1;
+                A[el_total_size-1+group2_size][hash_n-1] = A[el_total_size-1+group2_size][hash_n-1]-1;
+                b[hash_n-1] = b[hash_n-1]-current->value;
+            }
+            break;
+        case 'i':
+            if(strcmp(current->node_p,"0")!=0){
+                b[hash_p-1] = b[hash_p-1]+current->value;
+            }
+            if(strcmp(current->node_n,"0")!=0){
+                b[hash_n-1] = b[hash_n-1]-current->value;
+            }
+            break;
+        case 'r':
+            if(strcmp(current->node_p,"0")!=0){
+                A[hash_p-1][hash_p-1] = A[hash_p-1][hash_p-1] + (1/current->value);
+                if(strcmp(current->node_n,"0")!=0){
+                    A[hash_n-1][hash_p-1] = A[hash_n-1][hash_p-1]-(1/current->value);
+                    A[hash_p-1][hash_n-1] = A[hash_p-1][hash_n-1] - (1/current->value);
+                }
+            }
+            if(strcmp(current->node_n,"0")!=0){
+                A[hash_n-1][hash_n-1] = A[hash_n-1][hash_n-1] + (1/current->value);
+            }
+            break;
+        case 'l':
+            if(strcmp(current->node_p,"0")!=0){
+                b[hash_p-1] = b[hash_p-1]+0;
+            }
+            if(strcmp(current->node_n,"0")!=0){
+                b[hash_n-1] = b[hash_n-1]-0;
+            }
+            break;
+        case 'c':
+            break;        
+        default:
+            break;
+        }
+        current = current->next;
+    }
 
-	// Print A1 matrix
-	for (i=0;i<amount_of_nodes;i++) {
-		for (int j=0;j<el_total_size-group2_size;j++) {
-			printf("%3d ", A1[i][j]);
-		}
-		printf("\n");
-	}
-	printf("\n");
-
-
-	// Print A2 matrix
-	for (i=0;i<amount_of_nodes;i++) {
-		for (int j=0;j<group2_size;j++) {
-			printf("%3d ", A2[i][j]);
-		}
-		printf("\n");
-	}
-
-	// Free Mem
-	for (i=0;i<amount_of_nodes;i++) {
-		free(A1[i]);
-		free(A2[i]);
-	}
-	free(A1);
-	free(A2);
-
+    printf("A table is: \n");
+    for(i = 0; i < amount_of_nodes-1+group2_size; i++){
+        for(int j=0; j < amount_of_nodes-1+group2_size; j++){
+            printf("%.5lf ",A[i][j]);
+        }
+        printf("\n");
+    }
+    printf("b table is: \n");
+    for(i = 0; i < amount_of_nodes-1+group2_size; i++){
+        printf("%.5lf ",b[i]);
+    }
     return 0;
 }
