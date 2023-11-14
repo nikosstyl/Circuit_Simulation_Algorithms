@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include "Parser/parser.h"
-#include "Equation_Make/equation_make.h"
+
 
 int main(int argc, char* argv[]) {
 	FILE *input_file = NULL;
 	Element *head = NULL;
 	NodePair *head_node_pair = NULL;
-	RetHelper ret = {0};
+	
 
 	if (argc != 2) {
 		// no input file selected
@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
 
 //	printf("\nM1 elements: %d\nM2 elements: %d\n\n", ret.m1, ret.m2);
 	
-	equation_make(head_node_pair, head);
+	int res = equation_make(head_node_pair, head);
 
 	fclose(input_file);
 	fflush(stdout);
