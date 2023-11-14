@@ -1,8 +1,8 @@
-#include "parser.h"
+#include "Parser\parser.h"
 #include <stdlib.h>
 #include <stdio.h>
 
-int *create_matrix(NodePair *HashTable, Element *Element_list){
+int create_matrix(NodePair *HashTable, Element *Element_list){
 
     Element *current = NULL;
 	double **A=NULL, *b = NULL; // A[nodes_num][elements_num]
