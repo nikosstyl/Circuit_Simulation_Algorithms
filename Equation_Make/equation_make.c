@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-short int *create_matrix(NodePair *HashTable, Element *Element_list){
+int *create_matrix(NodePair *HashTable, Element *Element_list){
 
     Element *current = NULL;
 	double **A=NULL, *b = NULL; // A[nodes_num][elements_num]
