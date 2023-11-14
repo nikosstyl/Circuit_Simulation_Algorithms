@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
 		print_error(argv[0], 2, NULL);
 	}
 
-	ret = parser(input_file, &head, &head_node_pair);
+	
 
 //	printf("List length: %d\n\n", get_list_length(head));
 
@@ -27,8 +27,8 @@ int main(int argc, char* argv[]) {
     print_pairs(head_node_pair);
 
 //	printf("\nM1 elements: %d\nM2 elements: %d\n\n", ret.m1, ret.m2);
-
-	equation_make(head, head_node_pair, ret);
+	
+	equation_make(head_node_pair, head);
 
 	fclose(input_file);
 	fflush(stdout);
