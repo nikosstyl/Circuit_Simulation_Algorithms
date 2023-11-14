@@ -91,4 +91,4 @@ int find_node_pair(NodePair *head, char* node_str);
 // Prints every pair in the db (linked list).
 void print_pairs(NodePair *head);
 
-int *create_matrix(NodePair *HashTable, Element *Element_list);
+int create_matrix(NodePair *HashTable, Element *Element_list);
