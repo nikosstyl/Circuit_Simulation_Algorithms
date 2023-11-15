@@ -59,7 +59,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret){
                 
                 A[hash_p-1][ret->amount_of_nodes+m2counter-1] = A[hash_p-1][ret->amount_of_nodes+m2counter-1] + 1.0;
                 A[ret->amount_of_nodes+m2counter-1][hash_p-1] = A[ret->amount_of_nodes+m2counter-1][hash_p-1]+1.0;
-                printf("Done correctly\n");
+                
                 b[hash_p-1] = b[hash_p-1]+current->value;
             }
             if(hash_n!=0){
