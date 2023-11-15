@@ -45,18 +45,18 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret){
             A[i][j] = 0;
         }
     }
-    printf("Check1, el_total_size: %lu amount_of_nodes: %lu group2: %lu\n", ret->el_total_size,ret->amount_of_nodes,ret->group2_size);
+    
     current = Element_list;
     for(current=Element_list;current->next!=NULL; current=current->next){
         hash_p = (find_node_pair(HashTable, current->node_p));
 		hash_n = (find_node_pair(HashTable, current->node_n));
-        printf("hash_p: %d hash_n: %d currval %lf\n",hash_p, hash_n,current->value);
+        
         switch (current->type_of_element)
         {
         case 'v':{
             m2counter++;
             if(hash_p!=0){
-                printf("hash_p-1: %d hash_n: %d\n 2nd index: %ld\n",hash_p, hash_n,ret->amount_of_nodes+ret->group2_size);
+                
                 A[hash_p-1][ret->amount_of_nodes+m2counter-1] = A[hash_p-1][ret->amount_of_nodes+m2counter-1] + 1.0;
                 A[ret->amount_of_nodes+m2counter-1][hash_p-1] = A[ret->amount_of_nodes+m2counter-1][hash_p-1]+1.0;
                 printf("Done correctly\n");
