@@ -30,6 +30,7 @@ int main(int argc, char* argv[]) {
 
 	int res = create_matrix(head_node_pair, head, &ret);
 
+
 	fclose(input_file);
 	fflush(stdout);
 	free_mem(NULL, head, head_node_pair);

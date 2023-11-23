@@ -1,3 +1,5 @@
+#ifndef PARSER_H
+#define PARSER_H
 #define NUM_OF_ELEMENT_DATA 5
 #define MAX_CHAR_NUM 100
 
@@ -7,9 +9,16 @@
 #include <string.h>
 #include <ctype.h>
 #include <sys/types.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_linalg.h>
 
 static const char DC_ANALYSIS[] = ".op";
 static const char SKIP_NEWLINE[] = "%*[^\n]\n";
+static const char RED[] = "\x1b[31m";
+static const char GREEN[] = "\x1b[32m";
+static const char YELLOW[] = "\x1b[33m";
+static const char BLUE[] = "\x1b[34m";
+static const char RESET[] = "\x1b[0m";
 
 
 // Struct of an element
@@ -97,3 +106,6 @@ int find_node_pair(NodePair *head, char* node_str);
 void print_pairs(NodePair *head);
 
 int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret);
+
+void print_equation_system (RetHelper helper, gsl_matrix *A, gsl_vector *B);
+#endif
