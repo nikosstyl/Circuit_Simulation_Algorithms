@@ -3,11 +3,11 @@ CC = gcc
 CFLAGS = -Wall -I.
 
 # Define the source files and object files
-SRC = main.c Parser/parser.c Equation_Make/equation_make.c
+SRC = main.c Parser/parser.c Parser/equation_make.c
 OBJ = $(SRC:.c=.o)
 
 # Define the executable name
-EXECUTABLE = my_program
+EXECUTABLE = Circuit_Simulation
 
 # Define the default target (the one that gets built when you just run `make`)
 all: $(EXECUTABLE)
@@ -22,7 +22,7 @@ $(EXECUTABLE): $(OBJ)
 
 # Run the program with an example input file
 run: $(EXECUTABLE)
-	./$(EXECUTABLE) test_netlist.cir
+	./$(EXECUTABLE) Parser/test_netlist.cir
 
 # Clean up the generated files
 clean:

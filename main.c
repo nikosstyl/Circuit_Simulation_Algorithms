@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "Parser/parser.h"
-#include "Equation_Make/equation_make.h"
+
 
 int main(int argc, char* argv[]) {
 	FILE *input_file = NULL;
@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
 		print_error(argv[0], 2, NULL);
 	}
 
-	ret = parser(input_file, &head, &head_node_pair);
+	parser(input_file, &head, &head_node_pair,&ret);
 
 //	printf("List length: %d\n\n", get_list_length(head));
 
@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
 
 //	printf("\nM1 elements: %d\nM2 elements: %d\n\n", ret.m1, ret.m2);
 
-	equation_make(head, head_node_pair, ret);
+	int res = create_matrix(head_node_pair, head, &ret);
 
 	fclose(input_file);
 	fflush(stdout);
