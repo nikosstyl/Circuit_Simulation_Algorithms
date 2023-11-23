@@ -7,7 +7,7 @@ SRC = main.c Parser/parser.c Parser/equation_make.c
 OBJ = $(SRC:.c=.o)
 
 # Define the executable name
-EXECUTABLE = my_program
+EXECUTABLE = Circuit_Simulation
 
 # Define the default target (the one that gets built when you just run `make`)
 all: $(EXECUTABLE)
