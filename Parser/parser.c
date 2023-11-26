@@ -40,13 +40,8 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 			strncpy(line_array[i], "\0", MAX_CHAR_NUM);
 		}
 
-		ret_val = fscanf(input_file, "%s %s %s %s\n", line_array[0], line_array[1], line_array[2], line_array[3]);
-
-//		if (line[strlen(line)-1] != '\n') {
-//			// Padding the last line
-//			line = realloc(line, (strlen(line)+1)*sizeof(char));
-//			line[strlen(line)] = '\n';
-//		}
+		// Read the first string and determine if it's an element or some command
+		ret_val = fscanf(input_file, "%s ", line_array[0]);
 
 		if ((ret_val == 0) || (ret_val == EOF)) {
 			break;
@@ -59,14 +54,10 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 		}
 
 		strToLower(line_array[0]);
-		strToLower(line_array[1]);
-		strToLower(line_array[2]);
-		strToLower(line_array[3]);
 
-
-//		if (remove_spaces(line, line_array) == 0) {
-//			print_error("parser", 4, "Remove spaces in line failed");
-//		}
+		if (!strcmp(line_array[0], SPICE_END)) {
+			break;
+		}
 
 		if (current != NULL) { // Find the next available free list
 			while (current->next != NULL) {
@@ -74,8 +65,13 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 			}
 		}
 
-		if ((line_array[0][0] != '*') && (line_array[0][0] != '.')) { // Ignore comments that start with *
+		if (line_array[0][0] != '.') { // Ignore comments that start with *
 			// Copy every element's value such as type, name, nodes etc
+			fscanf(input_file, "%s %s %s\n", line_array[1], line_array[2], line_array[3]);
+			for (int i=1;i<NUM_OF_ELEMENT_DATA;i++) {
+				strToLower(line_array[i]);
+			}
+			
 			current->type_of_element = line_array[0][0];
 			current->name = strdup(&line_array[0][1]);
 
@@ -101,6 +97,9 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 				//ret->amount_of_nodes++;
 			}
 			current->value = strtod(line_array[3], NULL);
+			// Go to the next element
+			current->next = calloc(1, sizeof(Element));
+			current->next->prev = current;
 		}
 		else if (line[0] == '.') {
 			// Has to be implemented
@@ -108,9 +107,7 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 			fscanf(input_file, SKIP_NEWLINE);
 		}
 		
-		// Go to the next element
-		current->next = calloc(1, sizeof(Element));
-		current->next->prev = current;
+		
 	}
 	free(line);
 	free_mem(line_array, NULL, NULL);

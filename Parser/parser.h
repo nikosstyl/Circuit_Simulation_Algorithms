@@ -13,6 +13,8 @@
 #include <gsl/gsl_linalg.h>
 
 static const char DC_ANALYSIS[] = ".op";
+static const char SPICE_END[] = ".end";
+
 static const char SKIP_NEWLINE[] = "%*[^\n]\n";
 static const char RED[] = "\x1b[31m";
 static const char GREEN[] = "\x1b[32m";
