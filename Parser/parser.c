@@ -1,6 +1,6 @@
 #include "parser.h"
 
-void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelper *ret) {
+void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelper *ret, SpiceAnalysis *options) {
 	char *line = NULL;
 	char **line_array;
 	unsigned long pair=0;
@@ -30,6 +30,10 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 	// Head for pairs linked list
 	if (!*head_node_pair) {
 		*head_node_pair = calloc(1, sizeof(NodePair));
+	}
+
+	if (!options) {
+		options = calloc(1, sizeof(SpiceAnalysis));
 	}
 
 	while(1) { // Change implementation to be a bit more generic
@@ -101,10 +105,26 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 			current->next = calloc(1, sizeof(Element));
 			current->next->prev = current;
 		}
-		else if (line[0] == '.') {
-			// Has to be implemented
-			// get_analysis_type;
-			fscanf(input_file, SKIP_NEWLINE);
+		else {
+			if (line[0] == '.') {
+				if (strcmp(line_array[0], OPTIONS) == 0) { // .OPTIONS statements
+					fscanf(input_file, "%s\n", line_array[1]);
+					if (strcmp(line_array[1], CHOLESKY_OPTION) == 0) {
+						ret->chol_flag = true;
+						fprintf(stderr, "\nCholesky decomposition is used\n");
+					}
+				}
+			}
+			else if (strcmp(line_array[0], DC_ANALYSIS) == 0) { // .OP Analysis
+				if ((options->DC_OP == false) && (!options->DC_SWEEP)) {
+					options->DC_OP = true;
+					fprintf(stderr, "\n\n.OP Selected\n\n"); // Debug only
+				}
+				else {
+					// Debug only
+					fprintf(stderr, "\n\nOP method not selected, as there is another one already\n\n");
+				}
+			}
 		}
 		
 		
@@ -115,15 +135,6 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 	ret->el_total_size = elements_read;
 }
 
-void get_analysis_type(char* line, AnalysisType **type_struct) {
-	AnalysisType *current = NULL;
-
-	if (!*type_struct) {
-		*type_struct = calloc(1, sizeof(AnalysisType));
-	}
-	
-	current = *type_struct;
-}
 
 int find_node_pair(NodePair *head, char* node_str) {
 	NodePair *current = head;

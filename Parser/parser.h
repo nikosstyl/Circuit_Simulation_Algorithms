@@ -12,8 +12,14 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_linalg.h>
 
-static const char DC_ANALYSIS[] = ".op";
 static const char SPICE_END[] = ".end";
+static const char DC_ANALYSIS[] = ".op";
+static const char OPTIONS[] = ".options";
+static const char DC_SWEEP[] = ".dc";
+static const char PRINT[] = ".print";
+static const char PLOT[] = ".plot";
+
+static const char CHOLESKY_OPTION[] = "spd";
 
 static const char SKIP_NEWLINE[] = "%*[^\n]\n";
 static const char RED[] = "\x1b[31m";
@@ -53,29 +59,41 @@ struct node_pair {
 };
 typedef struct node_pair NodePair;
 
-// Struct that holds information for the analysis of the simulation
-struct analysis_type {
-	char* type;
-	int start_voltage;
-	int stop_voltage;
-	unsigned long start_frequency;
-	unsigned long stop_frequency;
-	double sim_time;
+// Struct that holds information for all spice options
+struct spice_analysis {
+	// Element *head;
+    bool DC_OP;
+    struct dc_sweep_opts* DC_SWEEP;
+    struct plot_opts* PLOT;
 };
-typedef struct analysis_type AnalysisType;
+typedef struct spice_analysis SpiceAnalysis;
+
+// Struct for holding information about DC Sweep
+struct dc_sweep_opts {
+	char variable_type;
+    char *variable_name;
+	bool is_voltage; // true for voltage, false for current
+    double start_val;
+    double end_val;
+    double increment;
+};
+
+// Struct for holding information about Plots
+struct plot_opts {
+    int str_num; // Total number of strings aka V/I(<nodes>)
+    char **elements_to_print; // elements_to_print[str_num]
+};
 
 struct ret_helper {
 	unsigned long int group2_size;
 	unsigned long int el_total_size;
 	unsigned long int amount_of_nodes;
+	short int chol_flag;
 };
 typedef struct ret_helper RetHelper;
 
 // Main parser function. It calls every other function here. Returns the amount of elements that belong to group 2.
 void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelper *ret);
-
-// Get analysis type from line string
-void get_analysis_type(char* line, AnalysisType **type_struct);
 
 // Prints according error in stderr and terminates the program.
 void print_error (char* program_name, int error_code, char* comment);
