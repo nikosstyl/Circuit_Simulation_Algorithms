@@ -2,6 +2,8 @@
 #define PARSER_H
 #define NUM_OF_ELEMENT_DATA 5
 #define MAX_CHAR_NUM 100
+#define MAX_LINE_BUFF_LEN 1000
+#define STARTING_ARR_NUM 5
 
 #include <stdio.h>
 #include <stdlib.h>

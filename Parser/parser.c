@@ -11,6 +11,10 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 	//counts the amount of elements that belong to group2
 	unsigned int group2_el = 0;			
 	unsigned long elements_read = 0;
+	int total_allocs = 0;
+	char plot_line_buffer[MAX_LINE_BUFF_LEN]={'\0'};
+	int true_size = STARTING_ARR_NUM;
+	char temp_element[MAX_CHAR_NUM]={'\0'};
 
 	// Create line split 2D array
 	line_array = calloc(NUM_OF_ELEMENT_DATA, sizeof(char*));
@@ -106,13 +110,11 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 			current->next->prev = current;
 		}
 		else {
-			if (line[0] == '.') {
-				if (strcmp(line_array[0], OPTIONS) == 0) { // .OPTIONS statements
-					fscanf(input_file, "%s\n", line_array[1]);
-					if (strcmp(line_array[1], CHOLESKY_OPTION) == 0) {
-						ret->chol_flag = true;
-						fprintf(stderr, "\nCholesky decomposition is used\n");
-					}
+			if (strcmp(line_array[0], OPTIONS) == 0) { // .OPTIONS statements
+				fscanf(input_file, "%s\n", line_array[1]);
+				if (strcmp(line_array[1], CHOLESKY_OPTION) == 0) {
+					ret->chol_flag = true;
+					fprintf(stderr, "\nCholesky decomposition is used\n");
 				}
 			}
 			else if (strcmp(line_array[0], DC_ANALYSIS) == 0) { // .OP Analysis
@@ -168,9 +170,61 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 				options->DC_SWEEP->end_val = strtod(line_array[3], NULL);
 				options->DC_SWEEP->increment = strtod(line_array[4], NULL);
 			}
+			else if ((strcmp(line_array[0], PLOT) == 0) || (strcmp(line_array[0], PRINT) == 0)) {
+
+				for (int i=0;i<MAX_LINE_BUFF_LEN;i++) {
+					plot_line_buffer[i] = '\0';
+				}
+
+				fgets(plot_line_buffer, MAX_LINE_BUFF_LEN, input_file);
+
+				options->PLOT = calloc(1, sizeof(struct plot_opts));
+				if (!options->PLOT) {
+					print_error("parser", 3, "Error while creating PLOT options struct");
+				}
+
+				options->PLOT->elements_to_print = calloc(true_size, sizeof(char*));
+				for (int i=0;i<true_size;i++) {
+					options->PLOT->elements_to_print[i] = calloc(MAX_CHAR_NUM, sizeof(char));
+				}
+
+				for (int i=0;i<strlen(plot_line_buffer);) {
+					// Get each plot agrument from the buffer line
+
+					for (int j=0;j<MAX_CHAR_NUM;j++) {
+						temp_element[j] = '\0';
+					}
+
+					if (sscanf(&plot_line_buffer[i], "%s ", temp_element) == -1) {
+						// Exit when it reads new line or EOF
+						break;
+					}
+					i += strlen(temp_element)+1; // Go to the next element
+					total_allocs++; // Increase total allocations number
+					if (true_size - total_allocs == 0) { // Realloc the array if full
+						true_size += STARTING_ARR_NUM;
+						options->PLOT->elements_to_print = realloc(options->PLOT->elements_to_print, true_size*sizeof(char *));
+						if (!options->PLOT->elements_to_print) {
+							print_error("parser", 3, "Reallocating memory for plot elements to print failed!");
+						}
+						for (int j=total_allocs;j<true_size;j++) {
+							options->PLOT->elements_to_print[j] = calloc(MAX_CHAR_NUM, sizeof(char));
+							if (!options->PLOT->elements_to_print[j]) {
+								print_error("parser", 3, "Allocating new mem for plot elements failed!");
+							}
+						}
+					}
+					strncpy(options->PLOT->elements_to_print[total_allocs-1], temp_element, strlen(temp_element));
+				}
+
+				// Free the remaining lines
+				for (int i=total_allocs;i<true_size;i++) {
+					free(options->PLOT->elements_to_print[i]);
+				}
+
+				options->PLOT->str_num = total_allocs;
+			}
 		}
-		
-		
 	}
 	free(line);
 	free_mem(line_array, NULL, NULL);
