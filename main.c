@@ -7,6 +7,7 @@ int main(int argc, char* argv[]) {
 	Element *head = NULL;
 	NodePair *head_node_pair = NULL;
 	RetHelper ret = {0};
+	SpiceAnalysis options={0};
 
 	if (argc != 2) {
 		// no input file selected
@@ -19,7 +20,7 @@ int main(int argc, char* argv[]) {
 		print_error(argv[0], 2, NULL);
 	}
 
-	parser(input_file, &head, &head_node_pair,&ret);
+	parser(input_file, &head, &head_node_pair,&ret, &options);
 
 //	printf("List length: %d\n\n", get_list_length(head));
 

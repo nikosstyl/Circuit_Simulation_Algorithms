@@ -125,6 +125,49 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 					fprintf(stderr, "\n\nOP method not selected, as there is another one already\n\n");
 				}
 			}
+			else if (strcmp(line_array[0], DC_SWEEP) == 0) { // .DC Sweep Analysis
+				for (int i=0;i<NUM_OF_ELEMENT_DATA;i++) {
+					strncpy(line_array[i], "\0", MAX_CHAR_NUM);
+				}
+				
+				if ((options->DC_OP == true) || (options->DC_SWEEP)) {
+					fprintf(stderr, "\n\nDC Sweep method not selected, as there is another one already\n\n");
+					continue;
+				}
+				options->DC_OP = false;
+				fprintf(stderr, "\n\nDC Sweep Selected\n\n"); // Debug only
+
+				fscanf(input_file, "%s %s %s %s\n", line_array[1], line_array[2], line_array[3], line_array[4]);
+				
+				for (int i=0;i<NUM_OF_ELEMENT_DATA;i++) {
+					strToLower(line_array[i]);
+				}
+
+				options->DC_SWEEP = calloc(1, sizeof(struct dc_sweep_opts));
+				if (!options->DC_SWEEP) {
+					print_error("parser", 3, "Error while creating DC sweep struct");
+				}
+
+				switch (line_array[1][0]) {
+					case 'v': {
+						options->DC_SWEEP->is_voltage = true;
+						break;
+					}
+					case 'i': {
+						options->DC_SWEEP->is_voltage = false;
+						break;
+					}
+					default: {
+						print_error("parser", 3, "DC sweep was not a SOURCE");
+						break;
+					}
+				}
+				options->DC_SWEEP->variable_type = line_array[1][0];
+				options->DC_SWEEP->variable_name = strdup(&line_array[1][1]);
+				options->DC_SWEEP->start_val = strtod(line_array[2], NULL);
+				options->DC_SWEEP->end_val = strtod(line_array[3], NULL);
+				options->DC_SWEEP->increment = strtod(line_array[4], NULL);
+			}
 		}
 		
 		

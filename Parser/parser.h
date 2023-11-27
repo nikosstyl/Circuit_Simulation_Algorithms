@@ -93,7 +93,7 @@ struct ret_helper {
 typedef struct ret_helper RetHelper;
 
 // Main parser function. It calls every other function here. Returns the amount of elements that belong to group 2.
-void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelper *ret);
+void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelper *ret, SpiceAnalysis *options);
 
 // Prints according error in stderr and terminates the program.
 void print_error (char* program_name, int error_code, char* comment);
