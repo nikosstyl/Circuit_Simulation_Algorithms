@@ -8,6 +8,7 @@ int main(int argc, char* argv[]) {
 	NodePair *head_node_pair = NULL;
 	RetHelper ret = {0};
 	SpiceAnalysis options={0};
+	gsl_vector **x = NULL;
 
 	if (argc != 2) {
 		// no input file selected
@@ -29,7 +30,7 @@ int main(int argc, char* argv[]) {
 
 //	printf("\nM1 elements: %d\nM2 elements: %d\n\n", ret.m1, ret.m2);
 
-	int res = create_matrix(head_node_pair, head, &ret);
+	int res = create_matrix(head_node_pair, head, &ret, options, &x);
 
 
 	fclose(input_file);

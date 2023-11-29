@@ -40,7 +40,7 @@ struct sim_element {
 	char* node_n;
 	double value;
 	int group_flag;
-	
+	int position_in_vector_B;
 	//group_flag determines the group of the element. If set to 0 then KCL is needed to describe it, if set to 1, KVL is needed. 
 	// Hashed nodes
 	// unsigned long node_p_hash;
@@ -126,8 +126,7 @@ int find_node_pair(NodePair *head, char* node_str);
 
 // Prints every pair in the db (linked list).
 void print_pairs(NodePair *head);
-
-int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret);
-
+int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, SpiceAnalysis options, gsl_vector ***x);
+int find_b_pos (char *element_name, char type, Element *head);
 void print_equation_system (RetHelper helper, gsl_matrix *A, gsl_vector *B);
 #endif

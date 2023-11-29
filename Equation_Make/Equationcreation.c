@@ -3,14 +3,14 @@
 #include <stdio.h>
 #include <gsl/gsl_linalg.h>
 
-int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret){
+int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, SpiceAnalysis options, gsl_vector ***x){
 
     Element *current = NULL;
 	// double **A=NULL, *b = NULL; // A[nodes_num][elements_num]
     gsl_matrix *A=NULL;
     gsl_permutation *P=NULL;
     gsl_vector *b= NULL;
-    gsl_vector *x = NULL;
+    // gsl_vector *x = NULL;
     unsigned long m2counter = 0;
 	int elements_number=0;
 	int i=0, j =0,*s = NULL;

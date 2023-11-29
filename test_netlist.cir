@@ -1,0 +1,9 @@
+* Test circuit
+R1 2 0 2
+I1 0 2 2
+R2 1 2 4
+V1 1 0 3
+.dc V1 1 2.5 0.5
+*.op
+.print V(1) V(2)
+.end
