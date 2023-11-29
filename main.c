@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
 
 //	printf("\nM1 elements: %d\nM2 elements: %d\n\n", ret.m1, ret.m2);
 
-	create_matrix(head_node_pair, head, &ret, options, &x);
+	create_matrix(head_node_pair, head, &ret, options, &x, argv[1]);
 
 
 	fclose(input_file);

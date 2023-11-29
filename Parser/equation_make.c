@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <gsl/gsl_linalg.h>
 
-int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, SpiceAnalysis options, gsl_vector ***x){
+int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, SpiceAnalysis options, gsl_vector ***x, char *filename){
 
     Element *current = NULL;
 	// double **A=NULL, *b = NULL; // A[nodes_num][elements_num]
@@ -14,6 +14,9 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
 	// int elements_number=0;
 	int i=0;
 	int hash_p=-1, hash_n=-1;
+    char str_to_hash[MAX_CHAR_NUM];
+    int hash_dc;
+    FILE *output_file=NULL;
 
     if (!Element_list) {
 		print_error("equation_make", 4, "Element list head empty");
@@ -217,6 +220,33 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
 					print_error("equation_solve", 4, gsl_strerror(status));
 				}
             }
+		}
+    }
+
+    if(options.PLOT) {
+        double total_steps=0;
+
+        if (options.DC_SWEEP) {
+            output_file = fopen(strcat(filename, ".dc.out"), "wb");
+            total_steps=(options.DC_SWEEP->end_val - options.DC_SWEEP->start_val)/options.DC_SWEEP->increment;
+        }
+        else {
+            output_file = fopen(strcat(filename, ".op.out"), "wb");
+            total_steps = 0;
+        }
+        
+        // printf("\nDC SWEEP\n");
+		for(int step=0; step<=(int)total_steps;step++) {
+            fprintf(output_file, "Step %d:\t", step+1);
+            for(int i=0; i<options.PLOT->str_num; i++) {
+                int size = strlen(&options.PLOT->elements_to_print[i][2])-1;
+                memcpy(str_to_hash, "\0", sizeof(char)*MAX_CHAR_NUM);
+                strncpy(str_to_hash, &options.PLOT->elements_to_print[i][2], size);
+                strToLower(str_to_hash);
+                hash_dc = find_node_pair(HashTable, str_to_hash);
+                fprintf(output_file, "V(%s) %lf\t", str_to_hash, gsl_vector_get(x_temp[step], hash_dc-1));
+            }
+            fprintf(output_file, "\n");
 		}
     }
 
