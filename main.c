@@ -30,7 +30,9 @@ int main(int argc, char* argv[]) {
 
 //	printf("\nM1 elements: %d\nM2 elements: %d\n\n", ret.m1, ret.m2);
 
-	int res = create_matrix(head_node_pair, head, &ret, options, &x);
+	create_matrix(head_node_pair, head, &ret, options, &x);
+
+	print_sols(strcat(argv[1], ".test"), x, head_node_pair, ret, options);
 
 
 	fclose(input_file);

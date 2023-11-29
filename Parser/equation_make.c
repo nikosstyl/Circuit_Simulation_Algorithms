@@ -8,12 +8,11 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
     Element *current = NULL;
 	// double **A=NULL, *b = NULL; // A[nodes_num][elements_num]
     gsl_matrix *A=NULL;
-    gsl_permutation *P=NULL;
     gsl_vector *b= NULL;
     // gsl_vector *x = NULL;
     unsigned long m2counter = 0;
-	int elements_number=0;
-	int i=0, j =0,*s = NULL;
+	// int elements_number=0;
+	int i=0;
 	int hash_p=-1, hash_n=-1;
 
     if (!Element_list) {
@@ -71,8 +70,6 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
                 // b[hash_p-1] = b[hash_p-1]+current->value;
                 gsl_matrix_set(A, hash_p-1, ret->amount_of_nodes+m2counter-1, gsl_matrix_get(A, hash_p-1, ret->amount_of_nodes+m2counter-1) + 1);
                 gsl_matrix_set(A, ret->amount_of_nodes+m2counter-1, hash_p-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter-1, hash_p-1) + 1);
-                gsl_vector_set(b, hash_p-1, gsl_vector_get(b, hash_p-1) + current->value);
-                memset(&current->position_in_vector_B, i, sizeof(int));
             }
             if(hash_n!=0){
                 // A[hash_n-1][ret->amount_of_nodes+m2counter-1] = A[hash_n-1][ret->amount_of_nodes+m2counter-1]-1.0;
@@ -80,9 +77,10 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
                 // b[hash_n-1] = b[hash_n-1]-current->value;
                 gsl_matrix_set(A, hash_n-1, ret->amount_of_nodes+m2counter-1, gsl_matrix_get(A, hash_n-1, ret->amount_of_nodes+m2counter-1) - 1);
                 gsl_matrix_set(A, ret->amount_of_nodes+m2counter-1, hash_n-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter-1, hash_n-1) - 1);
-                gsl_vector_set(b, hash_n-1, gsl_vector_get(b, hash_n-1) - current->value);
-                memset(&current->position_in_vector_B, i, sizeof(int));
             }
+            gsl_vector_set(b, ret->amount_of_nodes+i, gsl_vector_get(b, ret->amount_of_nodes+i) + current->value);
+            memset(&current->position_in_vector_B, i, sizeof(int));
+            i++;
             break;
         }    
         case 'i':{
@@ -121,7 +119,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
                 // b[hash_p-1] = b[hash_p-1]+0;
                 gsl_matrix_set(A, hash_p-1, ret->amount_of_nodes+m2counter-1, gsl_matrix_get(A, hash_p-1, ret->amount_of_nodes+m2counter-1) + 1);
                 gsl_matrix_set(A, ret->amount_of_nodes+m2counter-1, hash_p-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter-1, hash_p-1) + 1);
-                gsl_vector_set(b, hash_p-1, gsl_vector_get(b, hash_p-1) + 0);
+                // gsl_vector_set(b, hash_p-1, gsl_vector_get(b, hash_p-1) + 0);
             }
             if(hash_n!=0){
                 // A[hash_n-1][ret->amount_of_nodes+m2counter-1] = A[hash_n-1][ret->amount_of_nodes+m2counter-1]-1.0;
@@ -129,8 +127,11 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
                 // b[hash_n-1] = b[hash_n-1]-0;
                 gsl_matrix_set(A, hash_n-1, ret->amount_of_nodes+m2counter-1, gsl_matrix_get(A, hash_n-1, ret->amount_of_nodes+m2counter-1) + 1);
                 gsl_matrix_set(A, ret->amount_of_nodes+m2counter-1, hash_n-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter-1, hash_n-1) + 1);
-                gsl_vector_set(b, hash_n-1, gsl_vector_get(b, hash_n-1) + 0);
+                // gsl_vector_set(b, hash_n-1, gsl_vector_get(b, hash_n-1) + 0);
             }
+            gsl_vector_set(b, ret->amount_of_nodes+i, gsl_vector_get(b, ret->amount_of_nodes+i) + 0);
+            memset(&current->position_in_vector_B, i, sizeof(int));
+            i++;
             break;
         }    
         case 'c':
@@ -146,6 +147,12 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
 
     gsl_vector **x_temp=NULL;
     gsl_permutation *p = gsl_permutation_calloc(b->size);
+
+    int status = gsl_linalg_LU_decomp(A, p, &status);
+    if (status) {
+        print_error("equation_solve", 3, gsl_strerror(status));
+    }
+
     if (options.DC_OP == true) {
         x_temp = calloc(1, sizeof(gsl_vector*));
         // if (ret->chol_flag == )
@@ -153,10 +160,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
         if (!p) {
             print_error("equation_solve",3, "P vector failed to alloc");
         }
-        int status = gsl_linalg_LU_decomp(A, p, &status);
-        if (status) {
-            print_error("equation_solve", 3, gsl_strerror(status));
-        }
+
         x_temp[0] = gsl_vector_calloc(b->size);
         status = gsl_linalg_LU_solve(A, p, b, x_temp[0]);
         if (status) {
@@ -209,69 +213,6 @@ int find_b_pos (char *element_name, char type, Element *head) {
 		current = current->next;
 	}
 	return -1;
-}
-
-void print_sols(char* filename, gsl_vector **x, NodePair *pair_head, RetHelper helper, SpiceAnalysis options) {
-	double total_steps = 1;
-	int step=0, element_index=0;
-	FILE *output_file=NULL;
-	char str_temp[MAX_CHAR_NUM]={"\0"};
-
-	if (!*x) {
-		return;
-	}
-
-	// Open output file accordingly
-	// Also, determine the total_steps for printing
-	if (options.DC_SWEEP) {
-		output_file = fopen(strcat(filename, ".dc.out"), "wb");
-		total_steps=(options.DC_SWEEP->end_val - options.DC_SWEEP->start_val)/options.DC_SWEEP->increment;
-	}
-	else {
-		output_file = fopen(strcat(filename, ".op.out"), "wb");
-		total_steps = 1;
-	}
-
-	fprintf(output_file, "(V(name): step_value) | Nothing\tV(to_print): value\n");
-	fprintf(output_file, "------------------------------------------------\n");
-
-	// The first time has to be printed seperately because .OP
-	if (options.DC_SWEEP) {
-		fprintf(output_file, "%c%s: %lf\t", options.DC_SWEEP->variable_type, options.DC_SWEEP->variable_name, options.DC_SWEEP->start_val + options.DC_SWEEP->increment*step);
-	}
-	
-	for (element_index=0;element_index<options.PLOT->str_num;element_index++) {
-		int size = strlen(&options.PLOT->elements_to_print[element_index][2])-1;
-		
-		strncpy(str_temp, &options.PLOT->elements_to_print[element_index][2], size);
-		strToLower(str_temp);
-		
-		int index = find_node_pair(pair_head,str_temp);
-		fprintf(output_file, "%c%s: %lf\t", options.PLOT->elements_to_print[element_index][0], str_temp, gsl_vector_get(x[step], index - 1));
-	}
-	fprintf(output_file, "\n");
-	
-	if (options.DC_OP == true) {
-		return;
-	}
-
-	for (step=1;step<=total_steps;step++) {
-		if (options.DC_SWEEP) {
-			fprintf(output_file, "%c%s: %lf\t", options.DC_SWEEP->variable_type, options.DC_SWEEP->variable_name, options.DC_SWEEP->start_val + options.DC_SWEEP->increment*step);
-		}
-
-		for (element_index=0;element_index<options.PLOT->str_num;element_index++) {
-			int size = strlen(&options.PLOT->elements_to_print[element_index][2])-1;
-			
-			strncpy(str_temp, &options.PLOT->elements_to_print[element_index][2], size);
-			strToLower(str_temp);
-			
-			// b_pos = find_b_pos(str_temp, tolower(options.PLOT->elements_to_print[element_index][0]), head);
-			int index = find_node_pair(pair_head,str_temp);
-			fprintf(output_file, "%c%s: %lf\t", options.PLOT->elements_to_print[element_index][0], str_temp, gsl_vector_get(x[step], index - 1));
-		}
-		fprintf(output_file, "\n");
-	}
 }
 
 void print_equation_system (RetHelper helper, gsl_matrix *A, gsl_vector *B) {

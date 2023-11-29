@@ -4,8 +4,6 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 	char *line = NULL;
 	char **line_array;
 	unsigned long pair=0;
-	size_t len;
-	//ssize_t read;
 	Element *current=NULL;
 	int ret_val=-1;
 	//counts the amount of elements that belong to group2
@@ -49,7 +47,7 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 		}
 
 		// Read the first string and determine if it's an element or some command
-		ret_val = fscanf(input_file, "%s ", line_array[0]);
+		ret_val = fscanf(input_file, "%s", line_array[0]);
 
 		if ((ret_val == 0) || (ret_val == EOF)) {
 			break;
@@ -363,7 +361,7 @@ void print_list(Element *head) {
 	}
 }
 
-void print_error (char* program_name ,int error_code, char* comment) {
+void print_error (char* program_name ,int error_code, const char* comment) {
 	switch (error_code) {
 		case 1: { // No input file selected
 			fprintf(stderr, "\n%s:\terror %d:\tNo input file selected!\n", program_name, error_code);
