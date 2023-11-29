@@ -146,25 +146,43 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
 	print_equation_system(*ret, A, b);
 
     gsl_vector **x_temp=NULL;
-    gsl_permutation *p = gsl_permutation_calloc(b->size);
+    int status;
+    gsl_permutation *p = NULL;
 
-    int status = gsl_linalg_LU_decomp(A, p, &status);
-    if (status) {
-        print_error("equation_solve", 3, gsl_strerror(status));
-    }
-
-    if (options.DC_OP == true) {
-        x_temp = calloc(1, sizeof(gsl_vector*));
-        // if (ret->chol_flag == )
-        
+    if (ret->chol_flag == false) {
+        p = gsl_permutation_calloc(b->size);
         if (!p) {
             print_error("equation_solve",3, "P vector failed to alloc");
         }
 
-        x_temp[0] = gsl_vector_calloc(b->size);
-        status = gsl_linalg_LU_solve(A, p, b, x_temp[0]);
+        status = gsl_linalg_LU_decomp(A, p, &status);
         if (status) {
             print_error("equation_solve", 3, gsl_strerror(status));
+        }
+    }
+    else {
+        status = gsl_linalg_cholesky_decomp1(A);
+		if (status) {
+			print_error("equation_solve", 4, gsl_strerror(status));
+		}
+    }
+
+    if (options.DC_OP == true) {
+        x_temp = calloc(1, sizeof(gsl_vector*));
+
+        x_temp[0] = gsl_vector_calloc(b->size);
+        
+        if (ret->chol_flag == false) {
+            status = gsl_linalg_LU_solve(A, p, b, x_temp[0]);
+            if (status) {
+                print_error("equation_solve", 3, gsl_strerror(status));
+            }
+        }
+        else {
+            status = gsl_linalg_cholesky_solve(A, b, x_temp[0]);
+			if (status) {
+				print_error("equation_solve", 4, gsl_strerror(status));
+			}
         }
     }
     else if (options.DC_OP == false && options.DC_SWEEP){
@@ -187,10 +205,18 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
 			
 			gsl_vector_set(b, ret->amount_of_nodes+b_pos, options.DC_SWEEP->start_val + step*(options.DC_SWEEP->increment));
 			
-			status = gsl_linalg_LU_solve(A, p, b, x_temp[step]);
-			if (status) {
-				print_error("equation_solve", 4, gsl_strerror(status));
-			}
+            if (ret->chol_flag == false) {
+                status = gsl_linalg_LU_solve(A, p, b, x_temp[step]);
+                if (status) {
+                    print_error("equation_solve", 4, gsl_strerror(status));
+                }
+            }
+            else {
+                status = gsl_linalg_cholesky_solve(A, b, x_temp[step]);
+				if (status) {
+					print_error("equation_solve", 4, gsl_strerror(status));
+				}
+            }
 		}
     }
 
