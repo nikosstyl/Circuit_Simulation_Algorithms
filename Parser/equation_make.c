@@ -194,8 +194,6 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
 		}
     }
 
-    
-
     *x = x_temp;
 	gsl_permutation_free(p);
 

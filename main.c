@@ -32,8 +32,6 @@ int main(int argc, char* argv[]) {
 
 	create_matrix(head_node_pair, head, &ret, options, &x);
 
-	print_sols(strcat(argv[1], ".test"), x, head_node_pair, ret, options);
-
 
 	fclose(input_file);
 	fflush(stdout);
