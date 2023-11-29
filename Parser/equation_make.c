@@ -186,6 +186,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
 			if (status) {
 				print_error("equation_solve", 4, gsl_strerror(status));
 			}
+            printf("CHOLESKY USED!\n");
         }
     }
     else if (options.DC_OP == false && options.DC_SWEEP){

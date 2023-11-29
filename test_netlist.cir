@@ -2,11 +2,11 @@
 R1 2 0 2
 I1 0 2 2
 R2 1 2 4
-V1 1 0 3
+*V1 1 0 3
 R3 2 4 1e3
-V2 2 4 2
-.dc V1 1 2.5 0.5
-*.op
+*V2 2 4 2
+*.dc V1 1 2.5 0.5
+.op
 .print V(1) V(2) V(4)
-*.options spd
+.options spd
 .end
