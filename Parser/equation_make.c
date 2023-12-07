@@ -73,6 +73,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
                 // b[hash_p-1] = b[hash_p-1]+current->value;
                 gsl_matrix_set(A, hash_p-1, ret->amount_of_nodes+m2counter-1, gsl_matrix_get(A, hash_p-1, ret->amount_of_nodes+m2counter-1) + 1);
                 gsl_matrix_set(A, ret->amount_of_nodes+m2counter-1, hash_p-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter-1, hash_p-1) + 1);
+                gsl_vector_set(b,hash_p-1, gsl_vector_get(b,hash_p-1)+current->value);
             }
             if(hash_n!=0){
                 // A[hash_n-1][ret->amount_of_nodes+m2counter-1] = A[hash_n-1][ret->amount_of_nodes+m2counter-1]-1.0;
@@ -80,8 +81,9 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
                 // b[hash_n-1] = b[hash_n-1]-current->value;
                 gsl_matrix_set(A, hash_n-1, ret->amount_of_nodes+m2counter-1, gsl_matrix_get(A, hash_n-1, ret->amount_of_nodes+m2counter-1) - 1);
                 gsl_matrix_set(A, ret->amount_of_nodes+m2counter-1, hash_n-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter-1, hash_n-1) - 1);
+                gsl_vector_set(b,hash_n-1, gsl_vector_get(b,hash_n-1)+current->value);
             }
-            gsl_vector_set(b, ret->amount_of_nodes+i, gsl_vector_get(b, ret->amount_of_nodes+i) + current->value);
+            //gsl_vector_set(b, ret->amount_of_nodes+i, gsl_vector_get(b, ret->amount_of_nodes+i) + current->value);
             memset(&current->position_in_vector_B, i, sizeof(int));
             i++;
             break;
@@ -122,7 +124,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
                 // b[hash_p-1] = b[hash_p-1]+0;
                 gsl_matrix_set(A, hash_p-1, ret->amount_of_nodes+m2counter-1, gsl_matrix_get(A, hash_p-1, ret->amount_of_nodes+m2counter-1) + 1);
                 gsl_matrix_set(A, ret->amount_of_nodes+m2counter-1, hash_p-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter-1, hash_p-1) + 1);
-                // gsl_vector_set(b, hash_p-1, gsl_vector_get(b, hash_p-1) + 0);
+                gsl_vector_set(b, hash_p-1, gsl_vector_get(b, hash_p-1) + 0);
             }
             if(hash_n!=0){
                 // A[hash_n-1][ret->amount_of_nodes+m2counter-1] = A[hash_n-1][ret->amount_of_nodes+m2counter-1]-1.0;
@@ -130,9 +132,9 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
                 // b[hash_n-1] = b[hash_n-1]-0;
                 gsl_matrix_set(A, hash_n-1, ret->amount_of_nodes+m2counter-1, gsl_matrix_get(A, hash_n-1, ret->amount_of_nodes+m2counter-1) + 1);
                 gsl_matrix_set(A, ret->amount_of_nodes+m2counter-1, hash_n-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter-1, hash_n-1) + 1);
-                // gsl_vector_set(b, hash_n-1, gsl_vector_get(b, hash_n-1) + 0);
+                gsl_vector_set(b, hash_n-1, gsl_vector_get(b, hash_n-1) + 0);
             }
-            gsl_vector_set(b, ret->amount_of_nodes+i, gsl_vector_get(b, ret->amount_of_nodes+i) + 0);
+            //gsl_vector_set(b, ret->amount_of_nodes+i, gsl_vector_get(b, ret->amount_of_nodes+i) + 0);
             memset(&current->position_in_vector_B, i, sizeof(int));
             i++;
             break;
