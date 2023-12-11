@@ -60,7 +60,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
     for(current=Element_list;current->next!=NULL; current=current->next){
         hash_p = (find_node_pair(HashTable, current->node_p));
 		hash_n = (find_node_pair(HashTable, current->node_n));
-        
+        i=0;
         switch (current->type_of_element)
         {
         case 'v':{
@@ -84,8 +84,9 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
                 gsl_vector_set(b,hash_n-1, gsl_vector_get(b,hash_n-1)+current->value);
             }
             //gsl_vector_set(b, ret->amount_of_nodes+i, gsl_vector_get(b, ret->amount_of_nodes+i) + current->value);
-            memset(&current->position_in_vector_B, i, sizeof(int));
-            i++;
+            //memset(&current->position_in_vector_B, i, sizeof(int));
+            //i++;
+            current->position_in_vector_B = ret->amount_of_nodes+m2counter-1;
             break;
         }    
         case 'i':{
@@ -208,8 +209,8 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
 
 		for (int step=0;(step<=(int)total_steps) && (b_pos != -1);step++) {
 			x_temp[step] = gsl_vector_calloc(b->size);
-			
-			gsl_vector_set(b, ret->amount_of_nodes+b_pos, options.DC_SWEEP->start_val + step*(options.DC_SWEEP->increment));
+			printf("BPOS IS: %d\n",b_pos);
+			gsl_vector_set(b, b_pos, options.DC_SWEEP->start_val + step*(options.DC_SWEEP->increment));
 			
             if (ret->chol_flag == false) {
                 status = gsl_linalg_LU_solve(A, p, b, x_temp[step]);
