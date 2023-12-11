@@ -55,7 +55,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
     //         return -1;
     //     }
     // }
-    
+    m2counter = 0;
     current = Element_list;
     for(current=Element_list;current->next!=NULL; current=current->next){
         hash_p = (find_node_pair(HashTable, current->node_p));
@@ -64,29 +64,30 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
         switch (current->type_of_element)
         {
         case 'v':{
-            m2counter++;
             if(hash_p!=0){
                 
                 // A[hash_p-1][ret->amount_of_nodes+m2counter-1] = A[hash_p-1][ret->amount_of_nodes+m2counter-1] + 1.0;
                 // A[ret->amount_of_nodes+m2counter-1][hash_p-1] = A[ret->amount_of_nodes+m2counter-1][hash_p-1]+1.0;
                 
                 // b[hash_p-1] = b[hash_p-1]+current->value;
-                gsl_matrix_set(A, hash_p-1, ret->amount_of_nodes+m2counter-1, gsl_matrix_get(A, hash_p-1, ret->amount_of_nodes+m2counter-1) + 1);
-                gsl_matrix_set(A, ret->amount_of_nodes+m2counter-1, hash_p-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter-1, hash_p-1) + 1);
-                gsl_vector_set(b,hash_p-1, gsl_vector_get(b,hash_p-1)+current->value);
+                gsl_matrix_set(A, hash_p-1, ret->amount_of_nodes+m2counter, gsl_matrix_get(A, hash_p-1, ret->amount_of_nodes+m2counter) + 1);
+                gsl_matrix_set(A, ret->amount_of_nodes+m2counter, hash_p-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter, hash_p-1) + 1);
+                
             }
             if(hash_n!=0){
                 // A[hash_n-1][ret->amount_of_nodes+m2counter-1] = A[hash_n-1][ret->amount_of_nodes+m2counter-1]-1.0;
                 // A[ret->amount_of_nodes+m2counter-1][hash_n-1] = A[ret->amount_of_nodes+m2counter-1][hash_n-1]-1.0;
                 // b[hash_n-1] = b[hash_n-1]-current->value;
-                gsl_matrix_set(A, hash_n-1, ret->amount_of_nodes+m2counter-1, gsl_matrix_get(A, hash_n-1, ret->amount_of_nodes+m2counter-1) - 1);
-                gsl_matrix_set(A, ret->amount_of_nodes+m2counter-1, hash_n-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter-1, hash_n-1) - 1);
-                gsl_vector_set(b,hash_n-1, gsl_vector_get(b,hash_n-1)+current->value);
+                gsl_matrix_set(A, hash_n-1, ret->amount_of_nodes+m2counter, gsl_matrix_get(A, hash_n-1, ret->amount_of_nodes+m2counter) - 1);
+                gsl_matrix_set(A, ret->amount_of_nodes+m2counter, hash_n-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter, hash_n-1) - 1);
+                
             }
             //gsl_vector_set(b, ret->amount_of_nodes+i, gsl_vector_get(b, ret->amount_of_nodes+i) + current->value);
             //memset(&current->position_in_vector_B, i, sizeof(int));
             //i++;
-            current->position_in_vector_B = ret->amount_of_nodes+m2counter-1;
+            gsl_vector_set(b, ret->amount_of_nodes+m2counter, gsl_vector_get(b,ret->amount_of_nodes+m2counter)+current->value);
+            current->position_in_vector_B = ret->amount_of_nodes+m2counter;
+            m2counter++;
             break;
         }    
         case 'i':{
@@ -118,27 +119,28 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
             break;
         }    
         case 'l':{
-            m2counter++;
             if(hash_p!=0){
                 // A[hash_p-1][ret->amount_of_nodes+m2counter-1] = A[hash_p-1][ret->amount_of_nodes+m2counter-1] + 1.0;
                 // A[ret->amount_of_nodes+m2counter-1][hash_p-1] = A[ret->amount_of_nodes+m2counter-1][hash_p-1]+1.0;
                 // b[hash_p-1] = b[hash_p-1]+0;
-                gsl_matrix_set(A, hash_p-1, ret->amount_of_nodes+m2counter-1, gsl_matrix_get(A, hash_p-1, ret->amount_of_nodes+m2counter-1) + 1);
-                gsl_matrix_set(A, ret->amount_of_nodes+m2counter-1, hash_p-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter-1, hash_p-1) + 1);
-                gsl_vector_set(b, hash_p-1, gsl_vector_get(b, hash_p-1) + 0);
+                gsl_matrix_set(A, hash_p-1, ret->amount_of_nodes+m2counter, gsl_matrix_get(A, hash_p-1, ret->amount_of_nodes+m2counter) + 1);
+                gsl_matrix_set(A, ret->amount_of_nodes+m2counter, hash_p-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter, hash_p-1) + 1);
+                
             }
             if(hash_n!=0){
                 // A[hash_n-1][ret->amount_of_nodes+m2counter-1] = A[hash_n-1][ret->amount_of_nodes+m2counter-1]-1.0;
                 // A[ret->amount_of_nodes+m2counter-1][hash_n-1] = A[ret->amount_of_nodes+m2counter-1][hash_n-1]-1.0;
                 // b[hash_n-1] = b[hash_n-1]-0;
-                gsl_matrix_set(A, hash_n-1, ret->amount_of_nodes+m2counter-1, gsl_matrix_get(A, hash_n-1, ret->amount_of_nodes+m2counter-1) + 1);
-                gsl_matrix_set(A, ret->amount_of_nodes+m2counter-1, hash_n-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter-1, hash_n-1) + 1);
-                gsl_vector_set(b, hash_n-1, gsl_vector_get(b, hash_n-1) + 0);
+                gsl_matrix_set(A, hash_n-1, ret->amount_of_nodes+m2counter, gsl_matrix_get(A, hash_n-1, ret->amount_of_nodes+m2counter) + 1);
+                gsl_matrix_set(A, ret->amount_of_nodes+m2counter, hash_n-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter, hash_n-1) + 1);
+                // gsl_vector_set(b, hash_n-1, gsl_vector_get(b, hash_n-1) + 0);
             }
             //gsl_vector_set(b, ret->amount_of_nodes+i, gsl_vector_get(b, ret->amount_of_nodes+i) + 0);
             // memset(&current->position_in_vector_B, i, sizeof(int));
             // i++;
-            current->position_in_vector_B = ret->amount_of_nodes+m2counter-1;
+            gsl_vector_set(b, ret->amount_of_nodes+m2counter, gsl_vector_get(b,ret->amount_of_nodes+m2counter)+0);
+            current->position_in_vector_B = ret->amount_of_nodes+m2counter;
+            m2counter++;
             break;
         }    
         case 'c':
@@ -147,6 +149,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
             break;
         }
         //current = current->next;
+        printf("m2counter: %lu\n", m2counter);
     }
 
 
