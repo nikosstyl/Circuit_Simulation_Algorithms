@@ -136,8 +136,9 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
                 gsl_vector_set(b, hash_n-1, gsl_vector_get(b, hash_n-1) + 0);
             }
             //gsl_vector_set(b, ret->amount_of_nodes+i, gsl_vector_get(b, ret->amount_of_nodes+i) + 0);
-            memset(&current->position_in_vector_B, i, sizeof(int));
-            i++;
+            // memset(&current->position_in_vector_B, i, sizeof(int));
+            // i++;
+            current->position_in_vector_B = ret->amount_of_nodes+m2counter-1;
             break;
         }    
         case 'c':
@@ -244,10 +245,15 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
             fprintf(output_file, "Step %d:\t", step+1);
             for(int i=0; i<options.PLOT->str_num; i++) {
                 int size = strlen(&options.PLOT->elements_to_print[i][2])-1;
-                memcpy(str_to_hash, "\0", sizeof(char)*MAX_CHAR_NUM);
+                // memcpy(str_to_hash, "\0", sizeof(char)*MAX_CHAR_NUM);
+                for (int j=0; j<MAX_CHAR_NUM; j++) {
+                    str_to_hash[j] = '\0';
+                }
                 strncpy(str_to_hash, &options.PLOT->elements_to_print[i][2], size);
                 strToLower(str_to_hash);
                 hash_dc = find_node_pair(HashTable, str_to_hash);
+                printf("STEP: %d\n", step);
+                printf("HASH_DC: %d\n", hash_dc);
                 fprintf(output_file, "V(%s) %lf\t", str_to_hash, gsl_vector_get(x_temp[step], hash_dc-1));
             }
             fprintf(output_file, "\n");
