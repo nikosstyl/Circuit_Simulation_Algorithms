@@ -27,6 +27,6 @@ run: $(EXECUTABLE)
 
 # Clean up the generated files
 clean:
-	rm -f $(EXECUTABLE) $(OBJ)
+	rm -f $(EXECUTABLE) $(OBJ) *.out
 
 .PHONY: all clean run
