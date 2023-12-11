@@ -149,7 +149,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
             break;
         }
         //current = current->next;
-        printf("m2counter: %lu\n", m2counter);
+        // printf("m2counter: %lu\n", m2counter);
     }
 
 
@@ -200,7 +200,8 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
         double total_steps=(options.DC_SWEEP->end_val - options.DC_SWEEP->start_val)/options.DC_SWEEP->increment;
 		int b_pos=-1, status=0;
 
-		b_pos = find_b_pos (options.DC_SWEEP->variable_name, options.DC_SWEEP->variable_type, Element_list);
+        int b_pos_arr[2]={0};
+		b_pos = find_b_pos (options.DC_SWEEP->variable_name, options.DC_SWEEP->variable_type, Element_list, b_pos_arr, HashTable);
 
 		if (b_pos == -1) {
 			fprintf(stderr, "\n%sElement %c%s not found in netlist!\nAborting DC sweep%s\n", RED, options.DC_SWEEP->variable_type, options.DC_SWEEP->variable_name, RESET);
@@ -213,8 +214,19 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
 
 		for (int step=0;(step<=(int)total_steps) && (b_pos != -1);step++) {
 			x_temp[step] = gsl_vector_calloc(b->size);
-			printf("BPOS IS: %d\n",b_pos);
-			gsl_vector_set(b, b_pos, options.DC_SWEEP->start_val + step*(options.DC_SWEEP->increment));
+			// printf("BPOS IS: %d\n",b_pos);
+
+            if (b_pos != -2) {
+			    gsl_vector_set(b, b_pos, options.DC_SWEEP->start_val + step*(options.DC_SWEEP->increment));
+            }
+            else {
+                if (b_pos_arr[0] != 0) {
+                    gsl_vector_set(b, b_pos_arr[0]-1, -options.DC_SWEEP->start_val - step*(options.DC_SWEEP->increment));
+                }
+                if (b_pos_arr[1] != 0) {
+                    gsl_vector_set(b, b_pos_arr[1]-1, options.DC_SWEEP->start_val + step*(options.DC_SWEEP->increment));
+                }
+            }
 			
             if (ret->chol_flag == false) {
                 status = gsl_linalg_LU_solve(A, p, b, x_temp[step]);
@@ -227,6 +239,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
 				if (status) {
 					print_error("equation_solve", 4, gsl_strerror(status));
 				}
+                printf("CHOLESKY USED!\n");
             }
 		}
     }
@@ -255,8 +268,8 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
                 strncpy(str_to_hash, &options.PLOT->elements_to_print[i][2], size);
                 strToLower(str_to_hash);
                 hash_dc = find_node_pair(HashTable, str_to_hash);
-                printf("STEP: %d\n", step);
-                printf("HASH_DC: %d\n", hash_dc);
+                // printf("STEP: %d\n", step);
+                // printf("HASH_DC: %d\n", hash_dc);
                 fprintf(output_file, "V(%s) %lf\t", str_to_hash, gsl_vector_get(x_temp[step], hash_dc-1));
             }
             fprintf(output_file, "\n");
@@ -270,15 +283,28 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
 }
 
 
-int find_b_pos (char *element_name, char type, Element *head) {
-	Element *current = head;
+int find_b_pos (char *element_name, char type, Element *head, int* out, NodePair *HashTable) {
+	// out[0] = hash_p; out[1] = hash_n;
+    Element *current = head;
 
-	while (current->next) {
-		if (/* (current->position_in_vector_B != 0) &&  */(strcmp(element_name, current->name)==0) && type==current->type_of_element) {
-			return(current->position_in_vector_B);
-		}
-		current = current->next;
-	}
+    if (type == 'v') {
+        while (current->next) {
+            if ((strcmp(element_name, current->name)==0) && type==current->type_of_element) {
+                return(current->position_in_vector_B);
+            }
+            current = current->next;
+        }
+    }
+    else if (type == 'i') {
+        while (current->next) {
+            if ((strcmp(element_name, current->name)==0) && type==current->type_of_element) {
+                out[0] = find_node_pair(HashTable, current->node_p);
+                out[1] = find_node_pair(HashTable, current->node_n);
+                return -2;
+            }
+            current = current->next;
+        }
+    }
 	return -1;
 }
 

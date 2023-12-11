@@ -25,11 +25,11 @@ Rg2  _n_50_00_ 0 100
 * current source
 Isrc _n_00_00_  0 10
 
-*.OPTIONS SPD
+.OPTIONS SPD
 
 * required simulation
-*.DC Isrc 0 11 1
+.DC Isrc 0 11 1
 
 * required output
-*.PLOT V(_n_00_00_)
+.PLOT V(_n_00_00_)
 

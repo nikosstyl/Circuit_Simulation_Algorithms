@@ -109,7 +109,8 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 		}
 		else {
 			if (strcmp(line_array[0], OPTIONS) == 0) { // .OPTIONS statements
-				fscanf(input_file, "%s\n", line_array[1]);
+				fscanf(input_file, "%s", line_array[1]);
+				strToLower(line_array[1]);
 				if (strcmp(line_array[1], CHOLESKY_OPTION) == 0) {
 					ret->chol_flag = true;
 					fprintf(stderr, "\nCholesky decomposition is used\n");

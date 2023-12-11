@@ -129,7 +129,7 @@ void print_pairs(NodePair *head);
 
 int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, SpiceAnalysis options, gsl_vector ***x, char *filename);
 
-int find_b_pos (char *element_name, char type, Element *head);
+int find_b_pos (char *element_name, char type, Element *head, int *out, NodePair *HashTable);
 
 void print_equation_system (RetHelper helper, gsl_matrix *A, gsl_vector *B);
 #endif
