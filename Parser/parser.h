@@ -25,6 +25,8 @@ static const char PRINT[] = ".print";
 static const char PLOT[] = ".plot";
 
 static const char CHOLESKY_OPTION[] = "spd";
+static const char USE_ITERATIONS_OPTION[] = "iter";
+static const char GET_TOLERANCE[] = "itol=";
 
 static const char SKIP_NEWLINE[] = "%*[^\n]\n";
 static const char RED[] = "\x1b[31m";
@@ -93,7 +95,10 @@ struct ret_helper {
 	unsigned long int group2_size;
 	unsigned long int el_total_size;
 	unsigned long int amount_of_nodes;
-	short int chol_flag;
+	short int direct_chol_flag;
+	short int use_iterations;
+	short int use_iterations_cg;
+	double tolerance;
 };
 typedef struct ret_helper RetHelper;
 

@@ -112,8 +112,31 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 				fscanf(input_file, "%s", line_array[1]);
 				strToLower(line_array[1]);
 				if (strcmp(line_array[1], CHOLESKY_OPTION) == 0) {
-					ret->chol_flag = true;
+					ret->direct_chol_flag = 1;
 					fprintf(stderr, "\nCholesky decomposition is used\n");
+				}
+				else if (strcmp(line_array[1], USE_ITERATIONS_OPTION)==0) { // Check if iterations are used
+					char next_char = fgetc(input_file);
+					if ((next_char == '\n') || (next_char == '\r')){ // If new line, skip to new line
+						ret->use_iterations = 1;	
+						fprintf(stderr, "\nIteration is used (Bi-CG)\n");
+					}
+					else { // Else, read other options
+						fscanf(input_file, "%s", line_array[2]);
+						if (strcmp(line_array[2], CHOLESKY_OPTION) == 0) {
+							ret->use_iterations_cg = 1;
+							fprintf(stderr, "\nIteration is used (CG)\n");
+						}
+					}
+				}
+				else if (strncmp(line_array[1], GET_TOLERANCE, strlen(GET_TOLERANCE)) == 0) { // If iterations are used, check if the user gave a new tolerance
+					if (ret->use_iterations || ret->use_iterations_cg) {
+						sscanf(&line_array[1][strlen(GET_TOLERANCE)], "%lf", &ret->tolerance);
+						// fprintf(stderr, "\nNew tolerance is %lf\n", ret.max_iter_num);
+					}
+					else {
+						fprintf(stderr, "\nTolerance is not used, as iterations are not used\n");
+					}
 				}
 			}
 			else if (strcmp(line_array[0], DC_ANALYSIS) == 0) { // .OP Analysis
