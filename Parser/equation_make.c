@@ -332,3 +332,130 @@ void print_equation_system (RetHelper helper, gsl_matrix *A, gsl_vector *B) {
 	}
 	printf("\n");
 }
+
+void cg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector *x, double itol, int n) {
+    int iter = 0;
+    gsl_vector *r = gsl_vector_alloc(b->size);
+    gsl_vector *z = gsl_vector_alloc(b->size);
+    gsl_vector *p = gsl_vector_alloc(b->size);
+    gsl_vector *q = gsl_vector_alloc(b->size);
+    gsl_matrix *M = gsl_matrix_calloc(A->size1, A->size2);
+    double rho, rho1, beta, alpha, diagElement;
+
+    gsl_blas_dgemv(CblasNoTrans, -1.0, A, x, 0.0, r);
+    gsl_vector_add(r, b); // r = b - Ax
+
+    while (gsl_blas_dnrm2(r) / gsl_blas_dnrm2(b) > itol && iter < n) {
+        iter++;
+
+        for (int i = 0; (i < A->size1) || (i < A->size2); ++i) {
+            diagElement = gsl_matrix_get(A, i, i);
+            if(diagElement == 0) {
+                diagElement = 1;
+            }
+            gsl_matrix_set(M, i, i, 1.0 / diagElement);
+        }
+        gsl_blas_dgemv(CblasNoTrans, 1.0, M, r, 0.0, z);
+
+        gsl_blas_ddot(r, z, &rho); // rho = rT * z
+
+        if (iter == 1) {
+            gsl_vector_memcpy(p, z); // p = z
+        } else {
+            beta = rho / rho1;
+            gsl_vector_scale(p, beta);
+            gsl_vector_add(p, z); // p = z + beta * p
+        }
+
+        gsl_blas_dgemv(CblasNoTrans, 1.0, A, p, 0.0, q); // q = Ap
+
+        gsl_blas_ddot(p, q, &alpha); // alpha = pT * q
+        alpha = rho / alpha;
+
+        gsl_blas_daxpy(alpha, p, x); // x = x + alpha * p
+        gsl_blas_daxpy(-alpha, q, r); // r = r - alpha * q
+
+        rho1 = rho;
+    }
+
+    gsl_vector_free(r);
+    gsl_vector_free(z);
+    gsl_vector_free(p);
+    gsl_vector_free(q);
+    gsl_matrix_free(M);
+}
+
+void bicg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector *x, gsl_vector *initial_guess, double itol, int n) {
+    int iter = 0;
+    gsl_vector *r = gsl_vector_alloc(b->size);
+    gsl_vector *r_tilde = gsl_vector_alloc(b->size);
+    gsl_vector *z = gsl_vector_alloc(b->size);
+    gsl_vector *z_tilde = gsl_vector_alloc(b->size);
+    gsl_vector *p = gsl_vector_alloc(b->size);
+    gsl_vector *p_tilde = gsl_vector_alloc(b->size);
+    gsl_vector *q = gsl_vector_alloc(b->size);
+    gsl_vector *q_tilde = gsl_vector_alloc(b->size);
+    gsl_matrix *M = gsl_matrix_calloc(A->size1, A->size2);
+    double rho, rho1, beta, omega, alpha, diagElement;
+
+    gsl_vector_memcpy(x, initial_guess); // x = initial_guess
+
+    gsl_blas_dgemv(CblasNoTrans, -1.0, A, x, 0.0, r);
+    gsl_vector_add(r, b); // r = b - Ax
+    gsl_vector_memcpy(r_tilde, r); // r_tilde = r
+
+    while (gsl_blas_dnrm2(r) / gsl_blas_dnrm2(b) > itol && iter < n) {
+        iter++;
+
+        for (int i = 0; (i < A->size1) || (i < A->size2); ++i) {
+            diagElement = gsl_matrix_get(A, i, i);
+            if(diagElement == 0) {
+                diagElement = 1.0;
+            }
+            gsl_matrix_set(M, i, i, 1.0 / diagElement); // inverse of M
+        }
+        gsl_blas_dgemv(CblasNoTrans, 1.0, M, r, 0.0, z);
+        // for a diagonal matrix, the transpose of the inverse is the same as the inverse of the transpose
+        gsl_blas_dgemv(CblasNoTrans, 1.0, M, r_tilde, 0.0, z_tilde); // we use the same matrix M 
+
+        gsl_blas_ddot(r_tilde, z, &rho); // rho = r_tilde^T * z
+
+        if (fabs(rho) < EPS) break; // algorithm failure
+
+        if (iter == 1) {
+            gsl_vector_memcpy(p, z); // p = z
+            gsl_vector_memcpy(p_tilde, z_tilde); // p_tilde = z_tilde
+        } else {
+            beta = rho / rho1;
+            gsl_vector_scale(p, beta);
+            gsl_vector_add(p, z); // p = z + beta * p
+            gsl_vector_scale(p_tilde, beta);
+            gsl_vector_add(p_tilde, z_tilde); // p_tilde = z_tilde + beta * p_tilde
+        }
+
+        gsl_blas_dgemv(CblasNoTrans, 1.0, A, p, 0.0, q); // q = Ap
+        gsl_blas_dgemv(CblasTrans, 1.0, A, p_tilde, 0.0, q_tilde); // q_tilde = A^T p_tilde
+
+        gsl_blas_ddot(p_tilde, q, &omega); // omega = p_tilde^T * q
+
+        if (fabs(omega) < EPS) break; // algorithm failure
+
+        alpha = rho / omega;
+
+        gsl_blas_daxpy(alpha, p, x); // x = x + alpha * p
+        gsl_blas_daxpy(-alpha, q, r); // r = r - alpha * q
+        gsl_blas_daxpy(-alpha, q_tilde, r_tilde); // r_tilde = r_tilde - alpha * q_tilde
+
+        rho1 = rho;
+    }
+
+    gsl_vector_free(r);
+    gsl_vector_free(r_tilde);
+    gsl_vector_free(z);
+    gsl_vector_free(z_tilde);
+    gsl_vector_free(p);
+    gsl_vector_free(p_tilde);
+    gsl_vector_free(q);
+    gsl_vector_free(q_tilde);
+    gsl_matrix_free(M);
+}

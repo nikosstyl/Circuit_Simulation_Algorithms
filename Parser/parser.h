@@ -4,6 +4,7 @@
 #define MAX_CHAR_NUM 100
 #define MAX_LINE_BUFF_LEN 1000
 #define STARTING_ARR_NUM 5
+#define EPS 1e-14
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,6 +14,8 @@
 #include <sys/types.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_linalg.h>
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_blas.h>
 
 static const char SPICE_END[] = ".end";
 static const char DC_ANALYSIS[] = ".op";
