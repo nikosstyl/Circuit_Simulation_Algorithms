@@ -228,7 +228,9 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
                 }
             }
 			
-            if (ret->direct_chol_flag == false) {
+            if (ret->use_iterations) {}
+            else if (ret->use_iterations_cg) {}
+            else if (ret->direct_chol_flag) {
                 status = gsl_linalg_LU_solve(A, p, b, x_temp[step]);
                 if (status) {
                     print_error("equation_solve", 4, gsl_strerror(status));
