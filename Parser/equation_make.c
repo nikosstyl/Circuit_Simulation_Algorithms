@@ -235,6 +235,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
             }
 			
             if (ret->use_iterations) {
+                fprintf(stderr, "Tolerance: %lf\n", ret->tolerance);
                 bicg_solve(A, b, &x_temp[step], ret->tolerance, A->size1);
             }
             else if (ret->use_iterations_cg) {
