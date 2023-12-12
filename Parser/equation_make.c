@@ -360,7 +360,7 @@ void cg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector *x, double itol, int n) {
     while (gsl_blas_dnrm2(r) / gsl_blas_dnrm2(b) > itol && iter < n) {
         iter++;
 
-        for (int i = 0; (i < A->size1) || (i < A->size2); i++) {
+        for (int i = 0; i < A->size1; i++) {
             diagElement = gsl_matrix_get(A, i, i);
             if(diagElement == 0) {
                 diagElement = 1;
@@ -419,7 +419,7 @@ void bicg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector *x, gsl_vector *initial
     while (gsl_blas_dnrm2(r) / gsl_blas_dnrm2(b) > itol && iter < n) {
         iter++;
 
-        for (int i = 0; (i < A->size1) || (i < A->size2); i++) {
+        for (int i = 0; i < A->size1; i++) {
             diagElement = gsl_matrix_get(A, i, i);
             if(diagElement == 0) {
                 diagElement = 1.0;
