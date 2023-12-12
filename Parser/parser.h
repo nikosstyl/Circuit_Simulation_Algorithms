@@ -135,4 +135,8 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
 int find_b_pos (char *element_name, char type, Element *head, int *out, NodePair *HashTable);
 
 void print_equation_system (RetHelper helper, gsl_matrix *A, gsl_vector *B);
+
+void cg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector *x, double itol, int n);
+
+void bicg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector *x, gsl_vector *initial_guess, double itol, int n);
 #endif
