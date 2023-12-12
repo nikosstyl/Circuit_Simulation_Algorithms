@@ -159,7 +159,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
     int status;
     gsl_permutation *p = NULL;
 
-    if (ret->chol_flag == false) {
+    if (ret->direct_chol_flag == false) {
         p = gsl_permutation_calloc(b->size);
         if (!p) {
             print_error("equation_solve",3, "P vector failed to alloc");
@@ -182,7 +182,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
 
         x_temp[0] = gsl_vector_calloc(b->size);
         
-        if (ret->chol_flag == false) {
+        if (ret->direct_chol_flag == false) {
             status = gsl_linalg_LU_solve(A, p, b, x_temp[0]);
             if (status) {
                 print_error("equation_solve", 3, gsl_strerror(status));
@@ -228,7 +228,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
                 }
             }
 			
-            if (ret->chol_flag == false) {
+            if (ret->direct_chol_flag == false) {
                 status = gsl_linalg_LU_solve(A, p, b, x_temp[step]);
                 if (status) {
                     print_error("equation_solve", 4, gsl_strerror(status));
