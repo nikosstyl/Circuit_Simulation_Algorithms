@@ -352,12 +352,16 @@ void cg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, double itol, int n) 
     gsl_vector *p = gsl_vector_alloc(b->size);
     gsl_vector *q = gsl_vector_alloc(b->size);
     gsl_matrix *M = gsl_matrix_calloc(A->size1, A->size2);
-    double rho, rho1, beta, alpha, diagElement;
+    double rho, rho1, beta, alpha, diagElement, b_norm;
 
     gsl_blas_dgemv(CblasNoTrans, -1.0, A, *x, 0.0, r);
     gsl_vector_add(r, b); // r = b - Ax
 
-    while (gsl_blas_dnrm2(r) / gsl_blas_dnrm2(b) > itol && iter < n) {
+    b_norm = gsl_blas_dnrm2(b);
+    if(b_norm == 0) {
+        b_norm = 1;
+    }
+    while (gsl_blas_dnrm2(r) / b_norm > itol && iter < n) {
         iter++;
 
         for (int i = 0; i < A->size1; i++) {
@@ -388,6 +392,11 @@ void cg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, double itol, int n) 
         gsl_blas_daxpy(-alpha, q, r); // r = r - alpha * q
 
         rho1 = rho;
+
+        b_norm = gsl_blas_dnrm2(b);
+        if(b_norm == 0) {
+            b_norm = 1;
+        }
     }
 
     gsl_vector_free(r);
@@ -408,13 +417,17 @@ void bicg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, double itol, int n
     gsl_vector *q = gsl_vector_alloc(b->size);
     gsl_vector *q_tilde = gsl_vector_alloc(b->size);
     gsl_matrix *M = gsl_matrix_calloc(A->size1, A->size2);
-    double rho, rho1, beta, omega, alpha, diagElement;
+    double rho, rho1, beta, omega, alpha, diagElement, b_norm;
 
     gsl_blas_dgemv(CblasNoTrans, -1.0, A, *x, 0.0, r);
     gsl_vector_add(r, b); // r = b - Ax
     gsl_vector_memcpy(r_tilde, r); // r_tilde = r
 
-    while (gsl_blas_dnrm2(r) / gsl_blas_dnrm2(b) > itol && iter < n) {
+    b_norm = gsl_blas_dnrm2(b);
+    if(b_norm == 0) {
+        b_norm = 1;
+    }
+    while (gsl_blas_dnrm2(r) / b_norm > itol && iter < n) {
         iter++;
 
         for (int i = 0; i < A->size1; i++) {
@@ -457,6 +470,11 @@ void bicg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, double itol, int n
         gsl_blas_daxpy(-alpha, q_tilde, r_tilde); // r_tilde = r_tilde - alpha * q_tilde
 
         rho1 = rho;
+
+        b_norm = gsl_blas_dnrm2(b);
+        if(b_norm == 0) {
+            b_norm = 1;
+        }
     }
 
     gsl_vector_free(r);
