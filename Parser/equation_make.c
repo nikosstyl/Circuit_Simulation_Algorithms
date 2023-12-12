@@ -183,10 +183,10 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
         x_temp[0] = gsl_vector_calloc(b->size);
         
         if (ret->use_iterations) {
-            bicg_solve(A, b, &x_temp[0], ret->tolerance, MAX_ITERATIONS);
+            bicg_solve(A, b, &x_temp[0], ret->tolerance, A->size1);
         }
         else if (ret->use_iterations_cg) {
-            cg_solve(A, b, &x_temp[0], ret->tolerance, MAX_ITERATIONS);
+            cg_solve(A, b, &x_temp[0], ret->tolerance, A->size1);
         }
         else if (ret->direct_chol_flag == 0) {
             status = gsl_linalg_LU_solve(A, p, b, x_temp[0]);
@@ -235,10 +235,10 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
             }
 			
             if (ret->use_iterations) {
-                bicg_solve(A, b, &x_temp[step], ret->tolerance, MAX_ITERATIONS);
+                bicg_solve(A, b, &x_temp[step], ret->tolerance, A->size1);
             }
             else if (ret->use_iterations_cg) {
-                cg_solve(A, b, &x_temp[step], ret->tolerance, MAX_ITERATIONS);
+                cg_solve(A, b, &x_temp[step], ret->tolerance, A->size1);
             }
             else if (ret->direct_chol_flag == 0) {
                 status = gsl_linalg_LU_solve(A, p, b, x_temp[step]);
@@ -367,7 +367,7 @@ void cg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, double itol, int n) 
         for (int i = 0; i < A->size1; i++) {
             diagElement = gsl_matrix_get(A, i, i);
             if(diagElement == 0) {
-                diagElement = 1;
+                diagElement = 1.0;
             }
             gsl_matrix_set(M, i, i, 1.0 / diagElement);
         }
