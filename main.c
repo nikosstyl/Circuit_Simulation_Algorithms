@@ -10,6 +10,8 @@ int main(int argc, char* argv[]) {
 	SpiceAnalysis options={0};
 	gsl_vector **x = NULL;
 
+	ret.tolerance = 1e-3;
+
 	if (argc != 2) {
 		// no input file selected
 		print_error(argv[0], 1, NULL);
