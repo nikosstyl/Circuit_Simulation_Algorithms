@@ -23,7 +23,7 @@ $(EXECUTABLE): $(OBJ)
 
 # Run the program with an example input file
 run: $(EXECUTABLE)
-	./$(EXECUTABLE) Parser/test_netlist.cir
+	./$(EXECUTABLE) test2_V_no_SPD.txt
 
 # Clean up the generated files
 clean:
