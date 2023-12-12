@@ -23,7 +23,7 @@ $(EXECUTABLE): $(OBJ)
 
 # Run the program with an example input file
 run: $(EXECUTABLE)
-	./$(EXECUTABLE) test2_V_no_SPD.txt
+	./$(EXECUTABLE) test3_I_SPD.txt
 
 # Clean up the generated files
 clean:
