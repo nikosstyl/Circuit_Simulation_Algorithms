@@ -159,7 +159,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
     int status;
     gsl_permutation *p = NULL;
 
-    if (!ret->direct_chol_flag && (!ret->use_iterations || !ret->use_iterations_cg)) {
+    if (!ret->direct_chol_flag && (!ret->use_iterations &&  !ret->use_iterations_cg)) {
         p = gsl_permutation_calloc(b->size);
         if (!p) {
             print_error("equation_solve",3, "P vector failed to alloc");
@@ -235,7 +235,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
             }
 			
             if (ret->use_iterations) {
-                fprintf(stderr, "Tolerance: %lf\n", ret->tolerance);
+                // fprintf(stderr, "Tolerance: %lf\n", ret->tolerance);
                 bicg_solve(A, b, &x_temp[step], ret->tolerance, A->size1);
             }
             else if (ret->use_iterations_cg) {
