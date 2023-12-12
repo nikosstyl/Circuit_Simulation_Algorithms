@@ -183,7 +183,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
         x_temp[0] = gsl_vector_calloc(b->size);
         
         if (ret->use_iterations) {
-            bicg_solve(A, b, &x_temp[0], x_temp[0], ret->tolerance, MAX_ITERATIONS);
+            bicg_solve(A, b, &x_temp[0], ret->tolerance, MAX_ITERATIONS);
         }
         else if (ret->use_iterations_cg) {
             cg_solve(A, b, &x_temp[0], ret->tolerance, MAX_ITERATIONS);
@@ -235,7 +235,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
             }
 			
             if (ret->use_iterations) {
-                bicg_solve(A, b, &x_temp[step], x_temp[step], ret->tolerance, MAX_ITERATIONS);
+                bicg_solve(A, b, &x_temp[step], ret->tolerance, MAX_ITERATIONS);
             }
             else if (ret->use_iterations_cg) {
                 cg_solve(A, b, &x_temp[step], ret->tolerance, MAX_ITERATIONS);
@@ -397,7 +397,7 @@ void cg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, double itol, int n) 
     gsl_matrix_free(M);
 }
 
-void bicg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, gsl_vector *initial_guess, double itol, int n) {
+void bicg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, double itol, int n) {
     int iter = 0;
     gsl_vector *r = gsl_vector_alloc(b->size);
     gsl_vector *r_tilde = gsl_vector_alloc(b->size);
@@ -409,8 +409,6 @@ void bicg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, gsl_vector *initia
     gsl_vector *q_tilde = gsl_vector_alloc(b->size);
     gsl_matrix *M = gsl_matrix_calloc(A->size1, A->size2);
     double rho, rho1, beta, omega, alpha, diagElement;
-
-    gsl_vector_memcpy(*x, initial_guess); // x = initial_guess
 
     gsl_blas_dgemv(CblasNoTrans, -1.0, A, *x, 0.0, r);
     gsl_vector_add(r, b); // r = b - Ax
