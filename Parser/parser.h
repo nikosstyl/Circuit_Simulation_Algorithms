@@ -5,6 +5,7 @@
 #define MAX_LINE_BUFF_LEN 1000
 #define STARTING_ARR_NUM 5
 #define EPS 1e-14
+#define MAX_ITERATIONS 1000
 
 #include <stdio.h>
 #include <stdlib.h>

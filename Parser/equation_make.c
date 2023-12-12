@@ -159,7 +159,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
     int status;
     gsl_permutation *p = NULL;
 
-    if (ret->direct_chol_flag == false) {
+    if (!ret->direct_chol_flag && (!ret->use_iterations || !ret->use_iterations_cg)) {
         p = gsl_permutation_calloc(b->size);
         if (!p) {
             print_error("equation_solve",3, "P vector failed to alloc");
@@ -170,7 +170,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
             print_error("equation_solve", 3, gsl_strerror(status));
         }
     }
-    else {
+    else if (ret->direct_chol_flag){
         status = gsl_linalg_cholesky_decomp1(A);
 		if (status) {
 			print_error("equation_solve", 4, gsl_strerror(status));
@@ -182,7 +182,13 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
 
         x_temp[0] = gsl_vector_calloc(b->size);
         
-        if (ret->direct_chol_flag == false) {
+        if (ret->use_iterations) {
+            bicg_solve(A, b, x_temp[0], x_temp[0], ret->tolerance, MAX_ITERATIONS);
+        }
+        else if (ret->use_iterations_cg) {
+            cg_solve(A, b, x_temp[0], ret->tolerance, MAX_ITERATIONS);
+        }
+        else if (ret->direct_chol_flag == false) {
             status = gsl_linalg_LU_solve(A, p, b, x_temp[0]);
             if (status) {
                 print_error("equation_solve", 3, gsl_strerror(status));
@@ -228,8 +234,12 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
                 }
             }
 			
-            if (ret->use_iterations) {}
-            else if (ret->use_iterations_cg) {}
+            if (ret->use_iterations) {
+                bicg_solve(A, b, x_temp[step], x_temp[step], ret->tolerance, MAX_ITERATIONS);
+            }
+            else if (ret->use_iterations_cg) {
+                cg_solve(A, b, x_temp[step], ret->tolerance, MAX_ITERATIONS);
+            }
             else if (ret->direct_chol_flag) {
                 status = gsl_linalg_LU_solve(A, p, b, x_temp[step]);
                 if (status) {
@@ -241,7 +251,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
 				if (status) {
 					print_error("equation_solve", 4, gsl_strerror(status));
 				}
-                printf("CHOLESKY USED!\n");
+                // printf("CHOLESKY USED!\n");
             }
 		}
     }
