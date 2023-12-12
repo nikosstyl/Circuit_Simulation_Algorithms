@@ -12,7 +12,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
     // gsl_vector *x = NULL;
     unsigned long m2counter = 0;
 	// int elements_number=0;
-	int i=0;
+	// int i=0;
 	int hash_p=-1, hash_n=-1;
     char str_to_hash[MAX_CHAR_NUM];
     int hash_dc;
@@ -60,7 +60,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
     for(current=Element_list;current->next!=NULL; current=current->next){
         hash_p = (find_node_pair(HashTable, current->node_p));
 		hash_n = (find_node_pair(HashTable, current->node_n));
-        i=0;
+        // i=0;
         switch (current->type_of_element)
         {
         case 'v':{
@@ -183,12 +183,12 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
         x_temp[0] = gsl_vector_calloc(b->size);
         
         if (ret->use_iterations) {
-            bicg_solve(A, b, x_temp[0], x_temp[0], ret->tolerance, MAX_ITERATIONS);
+            bicg_solve(A, b, &x_temp[0], x_temp[0], ret->tolerance, MAX_ITERATIONS);
         }
         else if (ret->use_iterations_cg) {
-            cg_solve(A, b, x_temp[0], ret->tolerance, MAX_ITERATIONS);
+            cg_solve(A, b, &x_temp[0], ret->tolerance, MAX_ITERATIONS);
         }
-        else if (ret->direct_chol_flag == false) {
+        else if (ret->direct_chol_flag == 0) {
             status = gsl_linalg_LU_solve(A, p, b, x_temp[0]);
             if (status) {
                 print_error("equation_solve", 3, gsl_strerror(status));
@@ -235,12 +235,12 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
             }
 			
             if (ret->use_iterations) {
-                bicg_solve(A, b, x_temp[step], x_temp[step], ret->tolerance, MAX_ITERATIONS);
+                bicg_solve(A, b, &x_temp[step], x_temp[step], ret->tolerance, MAX_ITERATIONS);
             }
             else if (ret->use_iterations_cg) {
-                cg_solve(A, b, x_temp[step], ret->tolerance, MAX_ITERATIONS);
+                cg_solve(A, b, &x_temp[step], ret->tolerance, MAX_ITERATIONS);
             }
-            else if (ret->direct_chol_flag) {
+            else if (ret->direct_chol_flag == 0) {
                 status = gsl_linalg_LU_solve(A, p, b, x_temp[step]);
                 if (status) {
                     print_error("equation_solve", 4, gsl_strerror(status));
@@ -345,7 +345,7 @@ void print_equation_system (RetHelper helper, gsl_matrix *A, gsl_vector *B) {
 	printf("\n");
 }
 
-void cg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector *x, double itol, int n) {
+void cg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, double itol, int n) {
     int iter = 0;
     gsl_vector *r = gsl_vector_alloc(b->size);
     gsl_vector *z = gsl_vector_alloc(b->size);
@@ -354,7 +354,7 @@ void cg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector *x, double itol, int n) {
     gsl_matrix *M = gsl_matrix_calloc(A->size1, A->size2);
     double rho, rho1, beta, alpha, diagElement;
 
-    gsl_blas_dgemv(CblasNoTrans, -1.0, A, x, 0.0, r);
+    gsl_blas_dgemv(CblasNoTrans, -1.0, A, *x, 0.0, r);
     gsl_vector_add(r, b); // r = b - Ax
 
     while (gsl_blas_dnrm2(r) / gsl_blas_dnrm2(b) > itol && iter < n) {
@@ -384,7 +384,7 @@ void cg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector *x, double itol, int n) {
         gsl_blas_ddot(p, q, &alpha); // alpha = pT * q
         alpha = rho / alpha;
 
-        gsl_blas_daxpy(alpha, p, x); // x = x + alpha * p
+        gsl_blas_daxpy(alpha, p, *x); // x = x + alpha * p
         gsl_blas_daxpy(-alpha, q, r); // r = r - alpha * q
 
         rho1 = rho;
@@ -397,7 +397,7 @@ void cg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector *x, double itol, int n) {
     gsl_matrix_free(M);
 }
 
-void bicg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector *x, gsl_vector *initial_guess, double itol, int n) {
+void bicg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, gsl_vector *initial_guess, double itol, int n) {
     int iter = 0;
     gsl_vector *r = gsl_vector_alloc(b->size);
     gsl_vector *r_tilde = gsl_vector_alloc(b->size);
@@ -410,9 +410,9 @@ void bicg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector *x, gsl_vector *initial
     gsl_matrix *M = gsl_matrix_calloc(A->size1, A->size2);
     double rho, rho1, beta, omega, alpha, diagElement;
 
-    gsl_vector_memcpy(x, initial_guess); // x = initial_guess
+    gsl_vector_memcpy(*x, initial_guess); // x = initial_guess
 
-    gsl_blas_dgemv(CblasNoTrans, -1.0, A, x, 0.0, r);
+    gsl_blas_dgemv(CblasNoTrans, -1.0, A, *x, 0.0, r);
     gsl_vector_add(r, b); // r = b - Ax
     gsl_vector_memcpy(r_tilde, r); // r_tilde = r
 
@@ -454,7 +454,7 @@ void bicg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector *x, gsl_vector *initial
 
         alpha = rho / omega;
 
-        gsl_blas_daxpy(alpha, p, x); // x = x + alpha * p
+        gsl_blas_daxpy(alpha, p, *x); // x = x + alpha * p
         gsl_blas_daxpy(-alpha, q, r); // r = r - alpha * q
         gsl_blas_daxpy(-alpha, q_tilde, r_tilde); // r_tilde = r_tilde - alpha * q_tilde
 

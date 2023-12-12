@@ -15,5 +15,6 @@ R7 7 0 1000
 R8 6 0 10
 
 .DC V1 0 3 0.01
+.options iter
 .PLOT V(4)
 
