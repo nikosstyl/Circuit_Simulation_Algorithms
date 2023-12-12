@@ -123,6 +123,7 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 					}
 					else { // Else, read other options
 						fscanf(input_file, "%s", line_array[2]);
+						strToLower(line_array[2]);
 						if (strcmp(line_array[2], CHOLESKY_OPTION) == 0) {
 							ret->use_iterations_cg = 1;
 							fprintf(stderr, "\nIteration is used (CG)\n");
