@@ -208,7 +208,7 @@ iB0_15_v n1_150_150 0 0.3125
 iB0_15_g 0 n0_125_125 0.3125
 
 *.OPTIONS SPD
-.options iter
+*.options iter
 .DC V17 0 3 0.01
 .PLOT v(n1_0_50)
 

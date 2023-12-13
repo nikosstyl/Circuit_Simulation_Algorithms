@@ -145,4 +145,6 @@ void print_equation_system (RetHelper helper, gsl_matrix *A, gsl_vector *B);
 void cg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, double itol, int n);
 
 void bicg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, double itol, int n);
+
+void plot(char *analysis_name, gsl_vector **x, NodePair *pair_head, RetHelper helper, SpiceAnalysis options);
 #endif

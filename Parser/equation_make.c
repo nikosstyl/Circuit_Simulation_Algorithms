@@ -287,6 +287,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
             }
             fprintf(output_file, "\n");
 		}
+        plot("Circuit Simulation Algorithms", x_temp, HashTable, *ret, options);
     }
 
     *x = x_temp;
@@ -487,4 +488,71 @@ void bicg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, double itol, int n
     gsl_vector_free(q);
     gsl_vector_free(q_tilde);
     gsl_matrix_free(M);
+}
+
+void plot(char *analysis_name, gsl_vector **x, NodePair *pair_head, RetHelper helper, SpiceAnalysis options) {
+	FILE *gnupipe = NULL;
+	FILE *fdata = NULL;
+	int step=0;
+	double total_steps;
+	char str_temp[MAX_CHAR_NUM];
+	// char *GnuPlotArgs[] = {"set grid", "plot \"data.tmp\" with lines"};
+
+	FILE *check = fopen("/usr/bin/gnuplot", "r");
+	if (!check) {
+		fprintf(stderr, "%s\nGnuPlot is not installed!\n\tInstall it and try again plotting!%s\n", RED, RESET);
+		fclose(check);
+		return;
+	}
+	fclose(check);
+
+	if (options.DC_SWEEP) {
+		total_steps=(options.DC_SWEEP->end_val - options.DC_SWEEP->start_val)/options.DC_SWEEP->increment;
+	}
+	else {
+		total_steps = 0;
+	}
+
+	fdata = fopen("data.tmp", "w");
+	// gnupipe = fopen("commands.gnuplot", "w");
+	gnupipe = popen("gnuplot -persistent", "w");
+
+	for (step=0;step<=(int)total_steps;step++) {
+		for (int element_index=0;element_index<options.PLOT->str_num;element_index++) {
+			int size = strlen(&options.PLOT->elements_to_print[element_index][2])-1;
+			for (int i=0;i<MAX_CHAR_NUM;i++) {
+				str_temp[i] = '\0';
+			}
+			strncpy(str_temp, &options.PLOT->elements_to_print[element_index][2], size);
+			strToLower(str_temp);
+			int index = find_node_pair(pair_head,str_temp);
+			
+			fprintf(fdata, "%lf %lf ", options.DC_SWEEP->start_val + options.DC_SWEEP->increment*step, gsl_vector_get(x[step], index - 1));
+		}
+		fprintf(fdata, "\n");
+		fflush(fdata);
+	}
+
+	fprintf(gnupipe, "set term wxt title '%s'\n", analysis_name);
+	fprintf(gnupipe, "set grid\n");
+	fprintf(gnupipe, "set termoption noenhanced\n");
+	fprintf(gnupipe, "set xlabel \"%c(%s)\"\n", toupper(options.DC_SWEEP->variable_type), options.DC_SWEEP->variable_name);
+	fprintf(gnupipe, "plot \"data.tmp\" ");
+
+	for (int i=0, j=1;i<options.PLOT->str_num;i++, j+=2) {
+		if (i==0) {
+			fprintf(gnupipe, "using %d:%d with lines title \"%s\"", j, j+1, options.PLOT->elements_to_print[i]);
+		}
+		else{
+			fprintf(gnupipe, ", \"\" using %d:%d with lines title \"%s\"", j, j+1, options.PLOT->elements_to_print[i]);
+		}
+	}
+	fprintf(gnupipe, "\n");
+
+	fflush(fdata);
+	fflush(gnupipe);
+	fclose(fdata);
+	pclose(gnupipe);
+
+	remove("data.tmp");
 }

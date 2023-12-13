@@ -118,7 +118,7 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 				else if (strcmp(line_array[1], USE_ITERATIONS_OPTION)==0) { // Check if iterations are used
 					char next_char = fgetc(input_file);
 					if ((next_char == '\n') || (next_char == '\r')){ // If new line, skip to new line
-						ret->use_iterations = 1;	
+						ret->use_iterations = 1;
 						fprintf(stderr, "\nIteration is used (Bi-CG)\n");
 					}
 					else { // Else, read other options
