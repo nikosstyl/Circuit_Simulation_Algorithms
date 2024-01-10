@@ -6,6 +6,10 @@
 #define STARTING_ARR_NUM 5
 #define EPS 1e-14
 #define MAX_ITERATIONS 1000
+#define ERR_NO_INPUT_FILE 1
+#define ERR_NO_FILE_READ 2
+#define ERR_NO_MEM 3
+#define ERR_GENERAL 4
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -146,6 +150,10 @@ void print_equation_system (RetHelper helper, gsl_matrix *A, gsl_vector *B);
 void cg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, double itol, int n);
 
 void bicg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, double itol, int n);
+
+void sparse_bi_cg_iter (const cs *A, const gsl_vector *b, gsl_vector **x, double itol);
+
+void sparse_cg_iter (const cs *A, const gsl_vector *b, gsl_vector **x, double itol);
 
 void plot(char *analysis_name, gsl_vector **x, NodePair *pair_head, RetHelper helper, SpiceAnalysis options);
 #endif

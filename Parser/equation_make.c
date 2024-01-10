@@ -356,6 +356,121 @@ void print_equation_system (RetHelper helper, gsl_matrix *A, gsl_vector *B) {
 	printf("\n");
 }
 
+void sparse_direct_equation_solve(cs *A, gsl_vector *B, gsl_vector ***x, SpiceAnalysis options, Element *head, RetHelper helper, NodePair *pair_head) {
+	css *S = NULL;
+	csn *N = NULL;
+	gsl_vector **x_temp = NULL, *temp = NULL;
+
+	if (!A || !B) {
+		print_error("sparse_direct_equation_solve", ERR_GENERAL, "Matrix A or B are NULL");
+	}
+
+	if (helper.direct_chol_flag == false) {
+		S = cs_sqr(2, A, 0);
+		if (!S) {
+			print_error("sparse_direct_equation_solve", ERR_GENERAL, "S Matrix not able to calloc");
+		}
+		N = cs_lu(A, S, 1);
+		if (!N) {
+			print_error("sparse_direct_equation_solve", ERR_GENERAL, "N Matrix not able to calloc");
+		}
+	}
+	else {
+		S = cs_schol(1, A);
+		if (!S) {
+			print_error("sparse_direct_equation_solve", ERR_GENERAL, "S Matrix not able to calloc");
+		}
+		N = cs_chol(A, S);
+		if (!N) {
+			print_error("sparse_direct_equation_solve", ERR_GENERAL, "N Matrix not able to calloc");
+		}
+	}
+
+	if (options.DC_OP == true) {
+		x_temp = calloc(1, sizeof(gsl_vector *));
+		if (!x_temp) {
+			print_error("equation_make", ERR_NO_MEM, "Sols Matrix not able to calloc");
+		}
+
+		x_temp[0] = gsl_vector_calloc(B->size);
+		temp = gsl_vector_calloc(B->size);
+		// temp = calloc(helper.node_num+helper.m2, sizeof(double)); // Calloc a temp vector
+
+		if (helper.direct_chol_flag == false) {
+			// LU Decomp
+			cs_ipvec(N->pinv, B->data, temp->data, helper.amount_of_nodes+helper.group2_size);
+			cs_lsolve(N->L, temp->data);
+			cs_usolve(N->U, temp->data);
+			cs_ipvec(S->q, temp->data, x_temp[0]->data, helper.amount_of_nodes+helper.group2_size);
+		}
+		else {
+			// Cholesky decomposition
+			cs_ipvec(S->pinv, B->data, temp->data, helper.amount_of_nodes+helper.group2_size);
+			cs_lsolve(N->L, temp->data);
+			cs_ltsolve(N->L, temp->data);
+			cs_pvec(S->pinv, temp->data, x_temp[0]->data, helper.amount_of_nodes+helper.group2_size);
+		}
+		gsl_vector_free(temp);
+	}
+	else if ((options.DC_OP == false) && (options.DC_SWEEP)) { // For each iteration, B vector has to change
+		double total_steps=(options.DC_SWEEP->end_val - options.DC_SWEEP->start_val)/options.DC_SWEEP->increment;
+		int b_pos=-1;
+		int find_pos_ret[2]={0};
+
+		find_pos(options.DC_SWEEP->variable_name, options.DC_SWEEP->variable_type, head, find_pos_ret, pair_head);
+
+		if (options.DC_SWEEP->variable_type == 'v') {
+			b_pos = find_pos_ret[0];
+		}
+
+		if (find_pos_ret[0] == -1 || find_pos_ret[1] == -1) {
+			fprintf(stderr, "\n%sElement %c%s not found in netlist!\nAborting DC sweep%s\n", RED, options.DC_SWEEP->variable_type, options.DC_SWEEP->variable_name, RESET);
+			return;
+		}
+
+		x_temp = calloc(((int)total_steps+1), sizeof(gsl_vector *));
+		if (!x_temp) {
+			print_error("equation_make", ERR_NO_MEM, "Solutions vector couldn't reallocate");
+		}
+
+		for (int step=0;step<=(int)total_steps;step++) {
+			x_temp[step] = gsl_vector_calloc(B->size);
+
+			temp = gsl_vector_calloc(helper.amount_of_nodes+helper.group2_size);
+
+			if (options.DC_SWEEP->variable_type == 'v') {
+				gsl_vector_set(B, helper.amount_of_nodes+b_pos, options.DC_SWEEP->start_val + step*(options.DC_SWEEP->increment));
+			}
+			else if( options.DC_SWEEP->variable_type == 'i') {
+				if (find_pos_ret[0] > 0) {
+					gsl_vector_set(B, find_pos_ret[0]-1, -(options.DC_SWEEP->start_val + step*(options.DC_SWEEP->increment)));
+				}
+				if (find_pos_ret[1] > 0) {
+					gsl_vector_set(B, find_pos_ret[1]-1, options.DC_SWEEP->start_val + step*(options.DC_SWEEP->increment));
+				}
+			}
+			
+			if (helper.direct_chol_flag == false) {
+				cs_ipvec(N->pinv, B->data, temp->data, helper.amount_of_nodes+helper.group2_size);
+				cs_lsolve(N->L, temp->data);
+				cs_usolve(N->U, temp->data);
+				cs_ipvec(S->q, temp->data, x_temp[step]->data, helper.amount_of_nodes+helper.group2_size);
+			}
+			else {
+				cs_ipvec(S->pinv, B->data, temp->data, helper.amount_of_nodes+helper.group2_size);
+				cs_lsolve(N->L, temp->data);
+				cs_ltsolve(N->L, temp->data);
+				cs_pvec(S->pinv, temp->data, x_temp[step]->data, helper.amount_of_nodes+helper.group2_size);
+			}
+			gsl_vector_free(temp);
+		}
+	}
+	*x = x_temp;
+
+	cs_nfree(N);
+	cs_sfree(S);
+}
+
 void cg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, double itol, int n) {
     int iter = 0;
     gsl_vector *r = gsl_vector_alloc(b->size);

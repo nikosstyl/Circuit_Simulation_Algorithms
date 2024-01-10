@@ -1,7 +1,7 @@
 # Define the compiler and compiler flags
 CC = gcc
 CFLAGS = -Wall -g -I.
-LIBFLAGS = -lm -lgsl -lgslcblas
+LIBFLAGS = -lm -lgsl -lgslcblas -lcxsparse
 
 # Define the source files and object files
 SRC = main.c Parser/parser.c Parser/equation_make.c
