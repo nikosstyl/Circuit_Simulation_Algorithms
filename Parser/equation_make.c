@@ -3,6 +3,15 @@
 #include <stdio.h>
 #include <gsl/gsl_linalg.h>
 
+void gsl_vector_multiply(gsl_vector *a, gsl_vector *b, gsl_vector *result) {
+    size_t i;
+    for (i = 0; i < a->size; i++) {
+        double ai = gsl_vector_get(a, i);
+        double bi = gsl_vector_get(b, i);
+        gsl_vector_set(result, i, ai * bi);
+    }
+}
+
 int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, SpiceAnalysis options, gsl_vector ***x, char *filename){
 
     Element *current = NULL;
@@ -488,6 +497,177 @@ void bicg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, double itol, int n
     gsl_vector_free(q);
     gsl_vector_free(q_tilde);
     gsl_matrix_free(M);
+}
+
+void sparse_cg_iter (const cs *A, const gsl_vector *b, gsl_vector **x, double itol) {
+	int iter = 0;
+	gsl_vector *r = gsl_vector_calloc(b->size);
+	gsl_vector *z = gsl_vector_calloc(b->size);
+	gsl_vector *p = gsl_vector_calloc(b->size);
+	gsl_vector *q = gsl_vector_calloc(b->size);
+	gsl_vector *M = gsl_vector_calloc(b->size);
+	double rho, rho1=0, beta, alpha, diagElement, b_norm;
+	
+	cs_gaxpy(A, (*x)->data, r->data);
+	gsl_vector_scale(r, -1.0);
+	gsl_vector_add(r, b); // r = b - Ax
+
+
+	b_norm = gsl_blas_dnrm2(b);
+	if(b_norm == 0) {
+		b_norm = 1;
+	}
+
+	gsl_vector_set_all(M, 1);
+
+	for (int i = 0; i < A->n; i++) {
+		for (int k=A->p[i];k<A->p[i+1];k++) {
+			if (A->i[k] == i) {
+				diagElement = A->x[k];
+				if(diagElement == 0) {
+					diagElement = 1.0;
+				}
+				gsl_vector_set(M, i, 1.0 / diagElement);
+			}
+		}
+	}
+
+	while (gsl_blas_dnrm2(r) / b_norm > itol && iter < MAX_ITERATIONS) {
+		iter++;
+
+		
+		gsl_vector_multiply(M, r, z);
+
+		gsl_blas_ddot(r, z, &rho); // rho = rT * z
+
+		if (iter == 1) {
+			gsl_vector_memcpy(p, z); // p = z
+		} else {
+			beta = rho / rho1;
+			gsl_vector_scale(p, beta);
+			gsl_vector_add(p, z); // p = z + beta * p
+		}
+
+		// gsl_blas_dgemv(CblasNoTrans, 1.0, A, p, 0.0, q); // q = Ap
+		// Change the above function to a sparse one.
+		gsl_vector_set_all(q, 0.0);
+		cs_gaxpy(A, p->data, q->data); // q = Ap
+
+		gsl_blas_ddot(p, q, &alpha); // alpha = pT * q
+		alpha = rho / alpha;
+
+		gsl_blas_daxpy(alpha, p, *x); // x = x + alpha * p
+		gsl_blas_daxpy(-alpha, q, r); // r = r - alpha * q
+
+		rho1 = rho;
+
+		b_norm = gsl_blas_dnrm2(b);
+		if(b_norm == 0) {
+			b_norm = 1;
+		}
+	}
+
+	gsl_vector_free(r);
+	gsl_vector_free(z);
+	gsl_vector_free(p);
+	gsl_vector_free(q);
+	gsl_vector_free(M);
+}
+
+
+void sparse_bi_cg_iter (const cs *A, const gsl_vector *b, gsl_vector **x, double itol) {
+	int iter = 0;
+	gsl_vector *r = gsl_vector_calloc(b->size);
+	gsl_vector *r_tilde = gsl_vector_calloc(b->size);
+	gsl_vector *z = gsl_vector_calloc(b->size);
+	gsl_vector *z_tilde = gsl_vector_calloc(b->size);
+	gsl_vector *p = gsl_vector_calloc(b->size);
+	gsl_vector *p_tilde = gsl_vector_calloc(b->size);
+	gsl_vector *q = gsl_vector_calloc(b->size);
+	gsl_vector *q_tilde = gsl_vector_calloc(b->size);
+	gsl_vector *M = gsl_vector_calloc(b->size);
+	double rho, rho1=0, beta, omega, alpha, diagElement, b_norm;
+
+	// mine_csgaxpy(A, *x, r);
+	cs_gaxpy(A, (*x)->data, r->data);
+	gsl_vector_scale(r, -1.0);
+	gsl_vector_add(r, b); // r = b - Ax
+	// gsl_vector_fprintf(stderr, r, "%f");
+
+	gsl_vector_memcpy(r_tilde, r); // r_tilde = r
+
+	b_norm = gsl_blas_dnrm2(b);
+	if(b_norm == 0) {
+		b_norm = 1;
+	}
+
+	gsl_vector_set_all(M, 1);
+
+	for (int j=0;j<A->n;j++) {
+		for (int k=A->p[j];k<A->p[j+1];k++) {
+			if (A->i[k] == j) {
+				diagElement = A->x[k];
+				gsl_vector_set(M, j, 1.0 / diagElement);
+			}
+		}
+	}
+
+	while (gsl_blas_dnrm2(r) / b_norm > itol && iter < MAX_ITERATIONS) {
+		iter++;
+
+		gsl_vector_multiply(M, r, z);
+		// for a diagonal matrix, the transpose of the inverse is the same as the inverse of the transpose
+		gsl_vector_multiply(M, r_tilde, z_tilde); // we use the same matrix M 
+
+		gsl_blas_ddot(r_tilde, z, &rho); // rho = r_tilde^T * z
+
+		if (fabs(rho) < GSL_DBL_EPSILON) break; // algorithm failure
+
+		if (iter == 1) {
+			gsl_vector_memcpy(p, z); // p = z
+			gsl_vector_memcpy(p_tilde, z_tilde); // p_tilde = z_tilde
+		} else {
+			beta = rho / rho1;
+			gsl_vector_scale(p, beta);
+			gsl_vector_add(p, z); // p = z + beta * p
+			gsl_vector_scale(p_tilde, beta);
+			gsl_vector_add(p_tilde, z_tilde); // p_tilde = z_tilde + beta * p_tilde
+		}
+
+		gsl_vector_set_all(q, 0.0);
+		gsl_vector_set_all(q_tilde, 0.0);
+		cs_gaxpy(A, p->data, q->data); // q = Ap
+		cs *A_tran = cs_transpose(A, 1);
+		cs_gaxpy(A_tran, p_tilde->data, q_tilde->data);
+		cs_spfree(A_tran);
+
+		gsl_blas_ddot(p_tilde, q, &omega); // omega = p_tilde^T * q
+
+		if (fabs(omega) < GSL_DBL_EPSILON) break; // algorithm failure
+
+		alpha = rho / omega;
+
+		gsl_blas_daxpy(alpha, p, *x); // x = x + alpha * p
+		gsl_blas_daxpy(-alpha, q, r); // r = r - alpha * q
+		gsl_blas_daxpy(-alpha, q_tilde, r_tilde); // r_tilde = r_tilde - alpha * q_tilde
+
+		rho1 = rho;
+
+		b_norm = gsl_blas_dnrm2(b);
+		if(b_norm == 0) {
+			b_norm = 1;
+		}
+	}
+
+	gsl_vector_free(r);
+	gsl_vector_free(r_tilde);
+	gsl_vector_free(z);
+	gsl_vector_free(z_tilde);
+	gsl_vector_free(p);
+	gsl_vector_free(p_tilde);
+	gsl_vector_free(q);
+	gsl_vector_free(q_tilde);
+	gsl_vector_free(M);
 }
 
 void plot(char *analysis_name, gsl_vector **x, NodePair *pair_head, RetHelper helper, SpiceAnalysis options) {

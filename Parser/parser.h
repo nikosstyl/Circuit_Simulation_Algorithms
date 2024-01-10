@@ -17,6 +17,7 @@
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_blas.h>
+#include <suitesparse/cs.h>
 
 static const char SPICE_END[] = ".end";
 static const char DC_ANALYSIS[] = ".op";
