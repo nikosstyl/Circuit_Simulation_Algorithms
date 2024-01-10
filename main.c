@@ -9,6 +9,7 @@ int main(int argc, char* argv[]) {
 	RetHelper ret = {0};
 	SpiceAnalysis options={0};
 	gsl_vector **x = NULL;
+	cs *A_sparse = NULL;
 
 	ret.tolerance = 1e-3;
 

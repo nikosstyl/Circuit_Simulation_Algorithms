@@ -3,6 +3,23 @@
 #include <stdio.h>
 #include <gsl/gsl_linalg.h>
 
+// cs_spalloc but with calloc
+cs *cs_spcalloc(int m, int n, int nzmax, int values, int triplet) {
+
+	cs *A = (cs *) cs_calloc(1, sizeof(cs)); /* allocate the cs struct */
+	if (!A)
+		return (NULL); /* out of memory */
+	A->m = m; /* define dimensions and nzmax */
+	A->n = n;
+	A->nzmax = nzmax = CS_MAX (nzmax, 1);
+	A->nz = triplet ? 0 : -1; /* allocate triplet or comp.col */
+	A->p = (int *) cs_calloc(triplet ? nzmax : n + 1, sizeof(int));
+	A->i = (int *) cs_calloc(nzmax, sizeof(int));
+	A->x = (double *) (values ? cs_calloc(nzmax, sizeof(double)) : NULL);
+	return ((!A->p || !A->i || (values && !A->x)) ? cs_spfree(A) : A);
+}
+
+
 void gsl_vector_multiply(gsl_vector *a, gsl_vector *b, gsl_vector *result) {
     size_t i;
     for (i = 0; i < a->size; i++) {
@@ -10,6 +27,175 @@ void gsl_vector_multiply(gsl_vector *a, gsl_vector *b, gsl_vector *result) {
         double bi = gsl_vector_get(b, i);
         gsl_vector_set(result, i, ai * bi);
     }
+}
+
+int sparse_equation_make(Element *head, NodePair *pair_head, RetHelper helper, cs **A, gsl_vector **b) {
+	Element *current = NULL;
+	cs *A_temp = NULL, *C_temp = NULL;
+	gsl_vector *b_temp;
+	unsigned long hash_p=0, hash_n=0;
+	int i=0, k=0;
+
+
+	if (!head) {
+		print_error("equation_make", ERR_GENERAL, "Element list head empty");
+	}
+
+	// CSparse implementation
+
+	// If cs_spalloc is used, valgrind throws a bunch of errors
+	A_temp = cs_spcalloc(helper.amount_of_nodes+helper.group2_size, helper.amount_of_nodes+helper.group2_size, helper.non_zero_elements, 1, 1);
+	if (!A_temp) {
+		print_error("equation_make", ERR_NO_MEM, "Matrix A_temp couldn't be created");
+	}
+	
+	A_temp->nz = helper.non_zero_elements;
+
+	b_temp = gsl_vector_calloc(helper.amount_of_nodes+helper.group2_size);
+	if (!b_temp) {
+		print_error("sparse_equation_make", ERR_NO_MEM, "Vector B_gsl couldn't be created");
+	}
+
+	// Fill A_temp matrix
+	i=0; k=0;
+	for (current = head;current->next != NULL;current=current->next) {
+		hash_p = find_node_pair(pair_head, current->node_p);
+		hash_n = find_node_pair(pair_head, current->node_n);
+
+		switch (current->type_of_element) {
+			case 'r': {
+				if ((hash_p !=0) && (hash_n != 0)) {
+					A_temp->i[k] = hash_p-1;
+					A_temp->p[k] = hash_p-1;
+					A_temp->x[k] += 1 / current->value;
+
+					k++;
+					
+					A_temp->i[k] = hash_p-1;
+					A_temp->p[k] = hash_n-1;
+					A_temp->x[k] -= 1 / current->value;
+
+					k++;
+
+					A_temp->i[k] = hash_n-1;
+					A_temp->p[k] = hash_p-1;
+					A_temp->x[k] -= 1 / current->value;
+
+					k++;
+
+					A_temp->i[k] = hash_n-1;
+					A_temp->p[k] = hash_n-1;
+					A_temp->x[k] += 1 / current->value;
+
+					k++;
+				}
+				else if (hash_n == 0) {
+					A_temp->i[k] = hash_p-1;
+					A_temp->p[k] = hash_p-1;
+					A_temp->x[k] += 1 / current->value;
+					k++;
+				}
+				else {
+					A_temp->i[k] = hash_n-1;
+					A_temp->p[k] = hash_n-1;
+					A_temp->x[k] -= 1 / current->value;
+					k++;
+				}
+				break;
+			}
+			case 'i': {
+				if ((hash_p != 0) && (hash_n != 0)) {
+					// b_temp[hash_p-1] -= current->value;
+					// b_temp[hash_n-1] += current->value;
+					gsl_vector_set(b_temp, hash_p-1, gsl_vector_get(b_temp, hash_p - 1) - current->value);
+					gsl_vector_set(b_temp, hash_n-1, gsl_vector_get(b_temp, hash_n - 1) + current->value);
+				}
+				else if (hash_n == 0) {
+					// b_temp[hash_p-1] -= current->value;
+					gsl_vector_set(b_temp, hash_p-1, gsl_vector_get(b_temp, hash_p - 1) - current->value);
+				}
+				else {
+					// b_temp[hash_n-1] += current->value;
+					gsl_vector_set(b_temp, hash_n-1, gsl_vector_get(b_temp, hash_n - 1) + current->value);
+				}
+				break;
+			}
+			case 'l': {
+				// For inductors, treat them as 0-volt voltage source
+				// in DC analysis (often called and .op)
+				// So, it will skip this case and move on to 'v'.
+			}
+			case 'v': {
+				if ((hash_p != 0) && (hash_n != 0)) {
+					A_temp->i[k] = helper.amount_of_nodes+i;
+					A_temp->p[k] = hash_p-1;
+					A_temp->x[k] += 1;
+					k++;
+
+					A_temp->i[k] = helper.amount_of_nodes+i;
+					A_temp->p[k] = hash_n-1;
+					A_temp->x[k] -= 1;
+					k++;
+
+					A_temp->i[k] = hash_p-1;
+					A_temp->p[k] = helper.amount_of_nodes+i;
+					A_temp->x[k] += 1;
+					k++;
+
+					A_temp->i[k] = hash_n-1;
+					A_temp->p[k] = helper.amount_of_nodes+i;
+					A_temp->x[k] -= 1;
+					k++;
+				}
+				else if (hash_n ==0) {
+					A_temp->i[k] = helper.amount_of_nodes+i;
+					A_temp->p[k] = hash_p-1;
+					A_temp->x[k] += 1;
+					k++;
+
+					A_temp->i[k] = hash_p-1;
+					A_temp->p[k] = helper.amount_of_nodes+i;
+					A_temp->x[k] += 1;
+					k++;
+				}
+				else {
+					A_temp->i[k] = helper.amount_of_nodes+i;
+					A_temp->p[k] = hash_n-1;
+					A_temp->x[k] -= 1;
+					k++;
+
+					A_temp->i[k] = hash_n-1;
+					A_temp->p[k] = helper.amount_of_nodes+i;
+					A_temp->x[k] -= 1;
+					k++;
+				}
+				gsl_vector_set(b_temp, helper.amount_of_nodes+i, current->type_of_element=='v' ? (current->value + gsl_vector_get(b_temp, helper.amount_of_nodes+i)): 0);
+				current->position_in_vector_B = i;
+				i++;
+				break;
+			}
+			case 'c': {
+				// Skip for DC analysis
+				break;
+			}
+		}
+	}
+
+	C_temp = cs_compress(A_temp);
+	if (!C_temp) {
+		print_error("equation_make", ERR_GENERAL, "Matrix A_temp couldn't be compressed");
+	}
+
+	cs_spfree(A_temp);
+
+	if (!cs_dupl(C_temp)) {
+		print_error("equation_make", ERR_GENERAL, "Matrix A_temp couldn't be duplicated");
+	}
+
+	*A = C_temp;
+	*b = b_temp;
+	
+	return 1;
 }
 
 int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, SpiceAnalysis options, gsl_vector ***x, char *filename){
@@ -417,7 +603,7 @@ void sparse_direct_equation_solve(cs *A, gsl_vector *B, gsl_vector ***x, SpiceAn
 		int b_pos=-1;
 		int find_pos_ret[2]={0};
 
-		find_pos(options.DC_SWEEP->variable_name, options.DC_SWEEP->variable_type, head, find_pos_ret, pair_head);
+		find_b_pos(options.DC_SWEEP->variable_name, options.DC_SWEEP->variable_type, head, find_pos_ret, pair_head);
 
 		if (options.DC_SWEEP->variable_type == 'v') {
 			b_pos = find_pos_ret[0];

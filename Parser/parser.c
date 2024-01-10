@@ -87,9 +87,23 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 										//If it changes increment by 1 the amount of elements in group2
 			elements_read++;
 			if(current->type_of_element == 'v' || current->type_of_element == 'l'){
+				if ((strcmp(line_array[1], "0") != 0) && (strcmp(line_array[2], "0") != 0)) {
+					ret->non_zero_elements += 4;
+				}
+				else {
+					ret->non_zero_elements += 2;
+				}
 				group2_el++;
 				current->group_flag = 1;	
-			}		
+			}
+			if (current->type_of_element == 'r') {
+				if ((strcmp(line_array[1], "0") != 0) && (strcmp(line_array[2], "0") != 0)) {
+					ret->non_zero_elements += 4;
+				}
+				else {
+					ret->non_zero_elements += 2;
+				}
+			}
 			// Calculate the hash and add it to the db, if not found
 			pair = find_node_pair(*head_node_pair, current->node_p);
 			if (pair == -1) {

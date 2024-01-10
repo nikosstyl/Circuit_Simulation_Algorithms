@@ -105,6 +105,7 @@ struct ret_helper {
 	short int use_iterations;
 	short int use_iterations_cg;
 	double tolerance;
+	int non_zero_elements;
 };
 typedef struct ret_helper RetHelper;
 
