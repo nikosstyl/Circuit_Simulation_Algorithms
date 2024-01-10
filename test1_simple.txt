@@ -16,6 +16,7 @@ R8 6 0 10
 
 *.op
 .DC V1 0 3 0.01
+.options sparse
 .options iter
 .PLOT V(4)
 

@@ -144,6 +144,10 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 						}
 					}
 				}
+				else if (strncmp(line_array[1], SPARSE_OPTION, strlen(SPARSE_OPTION)) == 0) {
+					ret->sparse = true;
+
+				}
 				else if (strncmp(line_array[1], GET_TOLERANCE, strlen(GET_TOLERANCE)) == 0) { // If iterations are used, check if the user gave a new tolerance
 					if (ret->use_iterations || ret->use_iterations_cg) {
 						sscanf(&line_array[1][strlen(GET_TOLERANCE)], "%lf", &ret->tolerance);

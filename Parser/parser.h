@@ -33,6 +33,7 @@ static const char PLOT[] = ".plot";
 static const char CHOLESKY_OPTION[] = "spd";
 static const char USE_ITERATIONS_OPTION[] = "iter";
 static const char GET_TOLERANCE[] = "itol=";
+static const char SPARSE_OPTION[] = "sparse";
 
 static const char SKIP_NEWLINE[] = "%*[^\n]\n";
 static const char RED[] = "\x1b[31m";
@@ -106,6 +107,7 @@ struct ret_helper {
 	short int use_iterations_cg;
 	double tolerance;
 	int non_zero_elements;
+	bool sparse;
 };
 typedef struct ret_helper RetHelper;
 
@@ -155,6 +157,8 @@ void bicg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, double itol, int n
 void sparse_bi_cg_iter (const cs *A, const gsl_vector *b, gsl_vector **x, double itol);
 
 void sparse_cg_iter (const cs *A, const gsl_vector *b, gsl_vector **x, double itol);
+
+void sparse_direct_equation_solve(cs *A, gsl_vector *B, gsl_vector ***x, SpiceAnalysis options, Element *head, RetHelper helper, NodePair *pair_head);
 
 void plot(char *analysis_name, gsl_vector **x, NodePair *pair_head, RetHelper helper, SpiceAnalysis options);
 #endif

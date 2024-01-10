@@ -204,6 +204,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
 	// double **A=NULL, *b = NULL; // A[nodes_num][elements_num]
     gsl_matrix *A=NULL;
     gsl_vector *b= NULL;
+	cs *A_sparse=NULL;
     // gsl_vector *x = NULL;
     unsigned long m2counter = 0;
 	// int elements_number=0;
@@ -223,234 +224,256 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
         printf("Something went wrong with stage 1 memory alloc. Exiting.\n");
         return -1;
     }
-
-    // A = calloc((ret->amount_of_nodes+ret->group2_size), sizeof(double));
-    A = gsl_matrix_calloc(ret->amount_of_nodes+ret->group2_size, ret->amount_of_nodes+ret->group2_size);
-    if(!A){
-        gsl_vector_free(b);
-        printf("Something went wrong with stage 1 memory alloc. Exiting.\n");
-        return -1;
-    }
-    // x = gsl_vector_calloc(ret->amount_of_nodes+ret->group2_size);
-    // if(!x){
-    //     gsl_matrix_free(A);
-    //     gsl_vector_free(b);
-    //     return -1;
-    // }
-    
-    // for(i=0; i < ((ret->amount_of_nodes+ret->group2_size)); i++){
-    //     A[i] = calloc((ret->amount_of_nodes+ret->group2_size),sizeof(double));
-    //     if(!A[i]){
-    //         printf("Something went wrong with stage 2 memory alloc. Exiting.\n");
-    //         for(int j=0; j < i; j++){
-    //             free(A[j]);
-    //         }
-    //         free(A);
-    //         free(b);
-    //         return -1;
-    //     }
-    // }
-    m2counter = 0;
-    current = Element_list;
-    for(current=Element_list;current->next!=NULL; current=current->next){
-        hash_p = (find_node_pair(HashTable, current->node_p));
-		hash_n = (find_node_pair(HashTable, current->node_n));
-        // i=0;
-        switch (current->type_of_element)
-        {
-        case 'v':{
-            if(hash_p!=0){
-                
-                // A[hash_p-1][ret->amount_of_nodes+m2counter-1] = A[hash_p-1][ret->amount_of_nodes+m2counter-1] + 1.0;
-                // A[ret->amount_of_nodes+m2counter-1][hash_p-1] = A[ret->amount_of_nodes+m2counter-1][hash_p-1]+1.0;
-                
-                // b[hash_p-1] = b[hash_p-1]+current->value;
-                gsl_matrix_set(A, hash_p-1, ret->amount_of_nodes+m2counter, gsl_matrix_get(A, hash_p-1, ret->amount_of_nodes+m2counter) + 1);
-                gsl_matrix_set(A, ret->amount_of_nodes+m2counter, hash_p-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter, hash_p-1) + 1);
-                
-            }
-            if(hash_n!=0){
-                // A[hash_n-1][ret->amount_of_nodes+m2counter-1] = A[hash_n-1][ret->amount_of_nodes+m2counter-1]-1.0;
-                // A[ret->amount_of_nodes+m2counter-1][hash_n-1] = A[ret->amount_of_nodes+m2counter-1][hash_n-1]-1.0;
-                // b[hash_n-1] = b[hash_n-1]-current->value;
-                gsl_matrix_set(A, hash_n-1, ret->amount_of_nodes+m2counter, gsl_matrix_get(A, hash_n-1, ret->amount_of_nodes+m2counter) - 1);
-                gsl_matrix_set(A, ret->amount_of_nodes+m2counter, hash_n-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter, hash_n-1) - 1);
-                
-            }
-            //gsl_vector_set(b, ret->amount_of_nodes+i, gsl_vector_get(b, ret->amount_of_nodes+i) + current->value);
-            //memset(&current->position_in_vector_B, i, sizeof(int));
-            //i++;
-            gsl_vector_set(b, ret->amount_of_nodes+m2counter, gsl_vector_get(b,ret->amount_of_nodes+m2counter)+current->value);
-            current->position_in_vector_B = ret->amount_of_nodes+m2counter;
-            m2counter++;
-            break;
-        }    
-        case 'i':{
-            if(hash_p!=0){
-                // b[hash_p-1] = b[hash_p-1]-current->value;
-                gsl_vector_set(b, hash_p-1, gsl_vector_get(b, hash_p-1) - current->value);
-            }
-            if(hash_n!=0){
-                // b[hash_n-1] = b[hash_n-1]+current->value;
-                gsl_vector_set(b, hash_n-1, gsl_vector_get(b, hash_n-1) + current->value);
-            }
-            break;
-        }    
-        case 'r':{
-            if(hash_p!=0){
-                // A[hash_p-1][hash_p-1] = A[hash_p-1][hash_p-1] + (1/current->value);
-                gsl_matrix_set(A, hash_p-1, hash_p-1, gsl_matrix_get(A, hash_p-1, hash_p-1) + (1/current->value));
-                if(hash_n!=0){
-                    // A[hash_n-1][hash_p-1] = A[hash_n-1][hash_p-1]-(1/current->value);
-                    // A[hash_p-1][hash_n-1] = A[hash_p-1][hash_n-1] - (1/current->value);
-                    gsl_matrix_set(A, hash_n-1, hash_p-1, gsl_matrix_get(A, hash_n-1, hash_p-1) - (1/current->value));
-                    gsl_matrix_set(A, hash_p-1, hash_n-1, gsl_matrix_get(A, hash_p-1, hash_n-1) - (1/current->value));
-                }
-            }
-            if(hash_n!=0){
-                // A[hash_n-1][hash_n-1] = A[hash_n-1][hash_n-1] + (1/current->value);
-                gsl_matrix_set(A, hash_n-1, hash_n-1, gsl_matrix_get(A, hash_n-1, hash_n-1) + (1/current->value));
-            }
-            break;
-        }    
-        case 'l':{
-            if(hash_p!=0){
-                // A[hash_p-1][ret->amount_of_nodes+m2counter-1] = A[hash_p-1][ret->amount_of_nodes+m2counter-1] + 1.0;
-                // A[ret->amount_of_nodes+m2counter-1][hash_p-1] = A[ret->amount_of_nodes+m2counter-1][hash_p-1]+1.0;
-                // b[hash_p-1] = b[hash_p-1]+0;
-                gsl_matrix_set(A, hash_p-1, ret->amount_of_nodes+m2counter, gsl_matrix_get(A, hash_p-1, ret->amount_of_nodes+m2counter) + 1);
-                gsl_matrix_set(A, ret->amount_of_nodes+m2counter, hash_p-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter, hash_p-1) + 1);
-                
-            }
-            if(hash_n!=0){
-                // A[hash_n-1][ret->amount_of_nodes+m2counter-1] = A[hash_n-1][ret->amount_of_nodes+m2counter-1]-1.0;
-                // A[ret->amount_of_nodes+m2counter-1][hash_n-1] = A[ret->amount_of_nodes+m2counter-1][hash_n-1]-1.0;
-                // b[hash_n-1] = b[hash_n-1]-0;
-                gsl_matrix_set(A, hash_n-1, ret->amount_of_nodes+m2counter, gsl_matrix_get(A, hash_n-1, ret->amount_of_nodes+m2counter) + 1);
-                gsl_matrix_set(A, ret->amount_of_nodes+m2counter, hash_n-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter, hash_n-1) + 1);
-                // gsl_vector_set(b, hash_n-1, gsl_vector_get(b, hash_n-1) + 0);
-            }
-            //gsl_vector_set(b, ret->amount_of_nodes+i, gsl_vector_get(b, ret->amount_of_nodes+i) + 0);
-            // memset(&current->position_in_vector_B, i, sizeof(int));
-            // i++;
-            gsl_vector_set(b, ret->amount_of_nodes+m2counter, gsl_vector_get(b,ret->amount_of_nodes+m2counter)+0);
-            current->position_in_vector_B = ret->amount_of_nodes+m2counter;
-            m2counter++;
-            break;
-        }    
-        case 'c':
-            break;        
-        default:
-            break;
-        }
-        //current = current->next;
-        // printf("m2counter: %lu\n", m2counter);
-    }
-
-
-	print_equation_system(*ret, A, b);
-
-    gsl_vector **x_temp=NULL;
-    int status;
-    gsl_permutation *p = NULL;
-
-    if (!ret->direct_chol_flag && (!ret->use_iterations &&  !ret->use_iterations_cg)) {
-        p = gsl_permutation_calloc(b->size);
-        if (!p) {
-            print_error("equation_solve",3, "P vector failed to alloc");
-        }
-
-        status = gsl_linalg_LU_decomp(A, p, &status);
-        if (status) {
-            print_error("equation_solve", 3, gsl_strerror(status));
-        }
-    }
-    else if (ret->direct_chol_flag){
-        status = gsl_linalg_cholesky_decomp1(A);
-		if (status) {
-			print_error("equation_solve", 4, gsl_strerror(status));
+	
+	if (ret->sparse == true) {
+		sparse_equation_make(Element_list, HashTable, *ret, &A_sparse, &b);	
+	}
+	else {
+		// A = calloc((ret->amount_of_nodes+ret->group2_size), sizeof(double));
+		A = gsl_matrix_calloc(ret->amount_of_nodes+ret->group2_size, ret->amount_of_nodes+ret->group2_size);
+		if(!A){
+			gsl_vector_free(b);
+			printf("Something went wrong with stage 1 memory alloc. Exiting.\n");
+			return -1;
 		}
-    }
+		// x = gsl_vector_calloc(ret->amount_of_nodes+ret->group2_size);
+		// if(!x){
+		//     gsl_matrix_free(A);
+		//     gsl_vector_free(b);
+		//     return -1;
+		// }
+		
+		// for(i=0; i < ((ret->amount_of_nodes+ret->group2_size)); i++){
+		//     A[i] = calloc((ret->amount_of_nodes+ret->group2_size),sizeof(double));
+		//     if(!A[i]){
+		//         printf("Something went wrong with stage 2 memory alloc. Exiting.\n");
+		//         for(int j=0; j < i; j++){
+		//             free(A[j]);
+		//         }
+		//         free(A);
+		//         free(b);
+		//         return -1;
+		//     }
+		// }
+		m2counter = 0;
+		current = Element_list;
+		for(current=Element_list;current->next!=NULL; current=current->next){
+			hash_p = (find_node_pair(HashTable, current->node_p));
+			hash_n = (find_node_pair(HashTable, current->node_n));
+			// i=0;
+			switch (current->type_of_element)
+			{
+			case 'v':{
+				if(hash_p!=0){
+					
+					// A[hash_p-1][ret->amount_of_nodes+m2counter-1] = A[hash_p-1][ret->amount_of_nodes+m2counter-1] + 1.0;
+					// A[ret->amount_of_nodes+m2counter-1][hash_p-1] = A[ret->amount_of_nodes+m2counter-1][hash_p-1]+1.0;
+					
+					// b[hash_p-1] = b[hash_p-1]+current->value;
+					gsl_matrix_set(A, hash_p-1, ret->amount_of_nodes+m2counter, gsl_matrix_get(A, hash_p-1, ret->amount_of_nodes+m2counter) + 1);
+					gsl_matrix_set(A, ret->amount_of_nodes+m2counter, hash_p-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter, hash_p-1) + 1);
+					
+				}
+				if(hash_n!=0){
+					// A[hash_n-1][ret->amount_of_nodes+m2counter-1] = A[hash_n-1][ret->amount_of_nodes+m2counter-1]-1.0;
+					// A[ret->amount_of_nodes+m2counter-1][hash_n-1] = A[ret->amount_of_nodes+m2counter-1][hash_n-1]-1.0;
+					// b[hash_n-1] = b[hash_n-1]-current->value;
+					gsl_matrix_set(A, hash_n-1, ret->amount_of_nodes+m2counter, gsl_matrix_get(A, hash_n-1, ret->amount_of_nodes+m2counter) - 1);
+					gsl_matrix_set(A, ret->amount_of_nodes+m2counter, hash_n-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter, hash_n-1) - 1);
+					
+				}
+				//gsl_vector_set(b, ret->amount_of_nodes+i, gsl_vector_get(b, ret->amount_of_nodes+i) + current->value);
+				//memset(&current->position_in_vector_B, i, sizeof(int));
+				//i++;
+				gsl_vector_set(b, ret->amount_of_nodes+m2counter, gsl_vector_get(b,ret->amount_of_nodes+m2counter)+current->value);
+				current->position_in_vector_B = ret->amount_of_nodes+m2counter;
+				m2counter++;
+				break;
+			}    
+			case 'i':{
+				if(hash_p!=0){
+					// b[hash_p-1] = b[hash_p-1]-current->value;
+					gsl_vector_set(b, hash_p-1, gsl_vector_get(b, hash_p-1) - current->value);
+				}
+				if(hash_n!=0){
+					// b[hash_n-1] = b[hash_n-1]+current->value;
+					gsl_vector_set(b, hash_n-1, gsl_vector_get(b, hash_n-1) + current->value);
+				}
+				break;
+			}    
+			case 'r':{
+				if(hash_p!=0){
+					// A[hash_p-1][hash_p-1] = A[hash_p-1][hash_p-1] + (1/current->value);
+					gsl_matrix_set(A, hash_p-1, hash_p-1, gsl_matrix_get(A, hash_p-1, hash_p-1) + (1/current->value));
+					if(hash_n!=0){
+						// A[hash_n-1][hash_p-1] = A[hash_n-1][hash_p-1]-(1/current->value);
+						// A[hash_p-1][hash_n-1] = A[hash_p-1][hash_n-1] - (1/current->value);
+						gsl_matrix_set(A, hash_n-1, hash_p-1, gsl_matrix_get(A, hash_n-1, hash_p-1) - (1/current->value));
+						gsl_matrix_set(A, hash_p-1, hash_n-1, gsl_matrix_get(A, hash_p-1, hash_n-1) - (1/current->value));
+					}
+				}
+				if(hash_n!=0){
+					// A[hash_n-1][hash_n-1] = A[hash_n-1][hash_n-1] + (1/current->value);
+					gsl_matrix_set(A, hash_n-1, hash_n-1, gsl_matrix_get(A, hash_n-1, hash_n-1) + (1/current->value));
+				}
+				break;
+			}    
+			case 'l':{
+				if(hash_p!=0){
+					// A[hash_p-1][ret->amount_of_nodes+m2counter-1] = A[hash_p-1][ret->amount_of_nodes+m2counter-1] + 1.0;
+					// A[ret->amount_of_nodes+m2counter-1][hash_p-1] = A[ret->amount_of_nodes+m2counter-1][hash_p-1]+1.0;
+					// b[hash_p-1] = b[hash_p-1]+0;
+					gsl_matrix_set(A, hash_p-1, ret->amount_of_nodes+m2counter, gsl_matrix_get(A, hash_p-1, ret->amount_of_nodes+m2counter) + 1);
+					gsl_matrix_set(A, ret->amount_of_nodes+m2counter, hash_p-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter, hash_p-1) + 1);
+					
+				}
+				if(hash_n!=0){
+					// A[hash_n-1][ret->amount_of_nodes+m2counter-1] = A[hash_n-1][ret->amount_of_nodes+m2counter-1]-1.0;
+					// A[ret->amount_of_nodes+m2counter-1][hash_n-1] = A[ret->amount_of_nodes+m2counter-1][hash_n-1]-1.0;
+					// b[hash_n-1] = b[hash_n-1]-0;
+					gsl_matrix_set(A, hash_n-1, ret->amount_of_nodes+m2counter, gsl_matrix_get(A, hash_n-1, ret->amount_of_nodes+m2counter) + 1);
+					gsl_matrix_set(A, ret->amount_of_nodes+m2counter, hash_n-1, gsl_matrix_get(A, ret->amount_of_nodes+m2counter, hash_n-1) + 1);
+					// gsl_vector_set(b, hash_n-1, gsl_vector_get(b, hash_n-1) + 0);
+				}
+				//gsl_vector_set(b, ret->amount_of_nodes+i, gsl_vector_get(b, ret->amount_of_nodes+i) + 0);
+				// memset(&current->position_in_vector_B, i, sizeof(int));
+				// i++;
+				gsl_vector_set(b, ret->amount_of_nodes+m2counter, gsl_vector_get(b,ret->amount_of_nodes+m2counter)+0);
+				current->position_in_vector_B = ret->amount_of_nodes+m2counter;
+				m2counter++;
+				break;
+			}    
+			case 'c':
+				break;        
+			default:
+				break;
+			}
+			//current = current->next;
+			// printf("m2counter: %lu\n", m2counter);
+		}
+	}
 
-    if (options.DC_OP == true) {
-        x_temp = calloc(1, sizeof(gsl_vector*));
 
-        x_temp[0] = gsl_vector_calloc(b->size);
-        
-        if (ret->use_iterations) {
-            bicg_solve(A, b, &x_temp[0], ret->tolerance, A->size1);
-        }
-        else if (ret->use_iterations_cg) {
-            cg_solve(A, b, &x_temp[0], ret->tolerance, A->size1);
-        }
-        else if (ret->direct_chol_flag == 0) {
-            status = gsl_linalg_LU_solve(A, p, b, x_temp[0]);
-            if (status) {
-                print_error("equation_solve", 3, gsl_strerror(status));
-            }
-        }
-        else {
-            status = gsl_linalg_cholesky_solve(A, b, x_temp[0]);
+	// print_equation_system(*ret, A, b);
+	gsl_vector **x_temp=NULL;
+
+	if (ret->sparse) {
+		if (ret->use_iterations) {
+			sparse_bi_cg_iter(A_sparse, b, x_temp, ret->tolerance);
+		}
+		else if (ret->use_iterations_cg) {
+			sparse_cg_iter(A_sparse, b, x_temp, ret->tolerance);
+		}
+		else {
+			sparse_direct_equation_solve(A_sparse, b, &x_temp, options, Element_list, *ret, HashTable);
+		}
+		*x = x_temp;
+	}
+	else {
+		int status;
+		gsl_permutation *p = NULL;
+
+		if (!ret->direct_chol_flag && (!ret->use_iterations &&  !ret->use_iterations_cg)) {
+			p = gsl_permutation_calloc(b->size);
+			if (!p) {
+				print_error("equation_solve",3, "P vector failed to alloc");
+			}
+
+			status = gsl_linalg_LU_decomp(A, p, &status);
+			if (status) {
+				print_error("equation_solve", 3, gsl_strerror(status));
+			}
+		}
+		else if (ret->direct_chol_flag){
+			status = gsl_linalg_cholesky_decomp1(A);
 			if (status) {
 				print_error("equation_solve", 4, gsl_strerror(status));
 			}
-            printf("CHOLESKY USED!\n");
-        }
-    }
-    else if (options.DC_OP == false && options.DC_SWEEP){
-        double total_steps=(options.DC_SWEEP->end_val - options.DC_SWEEP->start_val)/options.DC_SWEEP->increment;
-		int b_pos=-1, status=0;
-
-        int b_pos_arr[2]={0};
-		b_pos = find_b_pos (options.DC_SWEEP->variable_name, options.DC_SWEEP->variable_type, Element_list, b_pos_arr, HashTable);
-
-		if (b_pos == -1) {
-			fprintf(stderr, "\n%sElement %c%s not found in netlist!\nAborting DC sweep%s\n", RED, options.DC_SWEEP->variable_type, options.DC_SWEEP->variable_name, RESET);
 		}
 
-		x_temp = calloc(((int)total_steps+1), sizeof(gsl_vector *));
-		if (!x_temp) {
-			print_error("equation_make", 3, "Solutions vector couldn't reallocate");
-		}
+		if (options.DC_OP == true) {
+			x_temp = calloc(1, sizeof(gsl_vector*));
 
-		for (int step=0;(step<=(int)total_steps) && (b_pos != -1);step++) {
-			x_temp[step] = gsl_vector_calloc(b->size);
-			// printf("BPOS IS: %d\n",b_pos);
-
-            if (b_pos != -2) {
-			    gsl_vector_set(b, b_pos, options.DC_SWEEP->start_val + step*(options.DC_SWEEP->increment));
-            }
-            else {
-                if (b_pos_arr[0] != 0) {
-                    gsl_vector_set(b, b_pos_arr[0]-1, -options.DC_SWEEP->start_val - step*(options.DC_SWEEP->increment));
-                }
-                if (b_pos_arr[1] != 0) {
-                    gsl_vector_set(b, b_pos_arr[1]-1, options.DC_SWEEP->start_val + step*(options.DC_SWEEP->increment));
-                }
-            }
+			x_temp[0] = gsl_vector_calloc(b->size);
 			
-            if (ret->use_iterations) {
-                // fprintf(stderr, "Tolerance: %lf\n", ret->tolerance);
-                bicg_solve(A, b, &x_temp[step], ret->tolerance, A->size1);
-            }
-            else if (ret->use_iterations_cg) {
-                cg_solve(A, b, &x_temp[step], ret->tolerance, A->size1);
-            }
-            else if (ret->direct_chol_flag == 0) {
-                status = gsl_linalg_LU_solve(A, p, b, x_temp[step]);
-                if (status) {
-                    print_error("equation_solve", 4, gsl_strerror(status));
-                }
-            }
-            else {
-                status = gsl_linalg_cholesky_solve(A, b, x_temp[step]);
+			if (ret->use_iterations) {
+				bicg_solve(A, b, &x_temp[0], ret->tolerance, A->size1);
+			}
+			else if (ret->use_iterations_cg) {
+				cg_solve(A, b, &x_temp[0], ret->tolerance, A->size1);
+			}
+			else if (ret->direct_chol_flag == 0) {
+				status = gsl_linalg_LU_solve(A, p, b, x_temp[0]);
+				if (status) {
+					print_error("equation_solve", 3, gsl_strerror(status));
+				}
+			}
+			else {
+				status = gsl_linalg_cholesky_solve(A, b, x_temp[0]);
 				if (status) {
 					print_error("equation_solve", 4, gsl_strerror(status));
 				}
-                // printf("CHOLESKY USED!\n");
-            }
+				printf("CHOLESKY USED!\n");
+			}
 		}
-    }
+		else if (options.DC_OP == false && options.DC_SWEEP){
+			double total_steps=(options.DC_SWEEP->end_val - options.DC_SWEEP->start_val)/options.DC_SWEEP->increment;
+			int b_pos=-1, status=0;
+
+			int b_pos_arr[2]={0};
+			b_pos = find_b_pos (options.DC_SWEEP->variable_name, options.DC_SWEEP->variable_type, Element_list, b_pos_arr, HashTable);
+
+			if (b_pos == -1) {
+				fprintf(stderr, "\n%sElement %c%s not found in netlist!\nAborting DC sweep%s\n", RED, options.DC_SWEEP->variable_type, options.DC_SWEEP->variable_name, RESET);
+			}
+
+			x_temp = calloc(((int)total_steps+1), sizeof(gsl_vector *));
+			if (!x_temp) {
+				print_error("equation_make", 3, "Solutions vector couldn't reallocate");
+			}
+
+			for (int step=0;(step<=(int)total_steps) && (b_pos != -1);step++) {
+				x_temp[step] = gsl_vector_calloc(b->size);
+				// printf("BPOS IS: %d\n",b_pos);
+
+				if (b_pos != -2) {
+					gsl_vector_set(b, b_pos, options.DC_SWEEP->start_val + step*(options.DC_SWEEP->increment));
+				}
+				else {
+					if (b_pos_arr[0] != 0) {
+						gsl_vector_set(b, b_pos_arr[0]-1, -options.DC_SWEEP->start_val - step*(options.DC_SWEEP->increment));
+					}
+					if (b_pos_arr[1] != 0) {
+						gsl_vector_set(b, b_pos_arr[1]-1, options.DC_SWEEP->start_val + step*(options.DC_SWEEP->increment));
+					}
+				}
+				
+				if (ret->use_iterations) {
+					// fprintf(stderr, "Tolerance: %lf\n", ret->tolerance);
+					bicg_solve(A, b, &x_temp[step], ret->tolerance, A->size1);
+				}
+				else if (ret->use_iterations_cg) {
+					cg_solve(A, b, &x_temp[step], ret->tolerance, A->size1);
+				}
+				else if (ret->direct_chol_flag == 0) {
+					status = gsl_linalg_LU_solve(A, p, b, x_temp[step]);
+					if (status) {
+						print_error("equation_solve", 4, gsl_strerror(status));
+					}
+				}
+				else {
+					status = gsl_linalg_cholesky_solve(A, b, x_temp[step]);
+					if (status) {
+						print_error("equation_solve", 4, gsl_strerror(status));
+					}
+					// printf("CHOLESKY USED!\n");
+				}
+			}
+		}
+		
+		*x = x_temp;
+		gsl_permutation_free(p);
+	}
 
     if(options.PLOT) {
         double total_steps=0;
@@ -478,15 +501,13 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
                 hash_dc = find_node_pair(HashTable, str_to_hash);
                 // printf("STEP: %d\n", step);
                 // printf("HASH_DC: %d\n", hash_dc);
-                fprintf(output_file, "V(%s) %lf\t", str_to_hash, gsl_vector_get(x_temp[step], hash_dc-1));
+                fprintf(output_file, "V(%s) %lf\t", str_to_hash, gsl_vector_get(*x[step], hash_dc-1));
             }
             fprintf(output_file, "\n");
 		}
-        plot("Circuit Simulation Algorithms", x_temp, HashTable, *ret, options);
+        plot("Circuit Simulation Algorithms", *x, HashTable, *ret, options);
     }
 
-    *x = x_temp;
-	gsl_permutation_free(p);
 
     return 0;
 }
