@@ -160,5 +160,7 @@ void sparse_cg_iter (const cs *A, const gsl_vector *b, gsl_vector **x, double it
 
 void sparse_direct_equation_solve(cs *A, gsl_vector *B, gsl_vector ***x, SpiceAnalysis options, Element *head, RetHelper helper, NodePair *pair_head);
 
+void sparse_iterative_equation_solve (const cs *A, gsl_vector *B, gsl_vector ***x, SpiceAnalysis options, Element *head, RetHelper helper, NodePair *pair_head);
+
 void plot(char *analysis_name, gsl_vector **x, NodePair *pair_head, RetHelper helper, SpiceAnalysis options);
 #endif

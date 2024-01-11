@@ -358,16 +358,12 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
 	gsl_vector **x_temp=NULL;
 
 	if (ret->sparse) {
-		if (ret->use_iterations) {
-			sparse_bi_cg_iter(A_sparse, b, x_temp, ret->tolerance);
-		}
-		else if (ret->use_iterations_cg) {
-			sparse_cg_iter(A_sparse, b, x_temp, ret->tolerance);
+		if (ret->use_iterations || ret->use_iterations_cg) {
+			sparse_iterative_equation_solve(A_sparse, b, &x_temp, options, Element_list, *ret, HashTable);
 		}
 		else {
 			sparse_direct_equation_solve(A_sparse, b, &x_temp, options, Element_list, *ret, HashTable);
 		}
-		*x = x_temp;
 	}
 	else {
 		int status;
@@ -471,7 +467,7 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
 			}
 		}
 		
-		*x = x_temp;
+		// *x = x_temp;
 		gsl_permutation_free(p);
 	}
 
@@ -501,13 +497,19 @@ int create_matrix(NodePair *HashTable, Element *Element_list, RetHelper *ret, Sp
                 hash_dc = find_node_pair(HashTable, str_to_hash);
                 // printf("STEP: %d\n", step);
                 // printf("HASH_DC: %d\n", hash_dc);
-                fprintf(output_file, "V(%s) %lf\t", str_to_hash, gsl_vector_get(*x[step], hash_dc-1));
+                fprintf(output_file, "V(%s) %lf\t", str_to_hash, gsl_vector_get(x_temp[step], hash_dc-1));
             }
             fprintf(output_file, "\n");
 		}
-        plot("Circuit Simulation Algorithms", *x, HashTable, *ret, options);
+		fflush(output_file);
+
+		if (options.DC_SWEEP) {
+        	plot("Circuit Simulation Algorithms", x_temp, HashTable, *ret, options);
+		}
     }
 
+
+	*x = x_temp;
 
     return 0;
 }
@@ -676,6 +678,77 @@ void sparse_direct_equation_solve(cs *A, gsl_vector *B, gsl_vector ***x, SpiceAn
 
 	cs_nfree(N);
 	cs_sfree(S);
+}
+
+void sparse_iterative_equation_solve (const cs *A, gsl_vector *B, gsl_vector ***x, SpiceAnalysis options, Element *head, RetHelper helper, NodePair *pair_head) {
+	gsl_vector **x_temp = NULL;
+
+	if (!A || !B) {
+		print_error("sparse_iterative_equation_solve", ERR_GENERAL, "A or B is NULL");
+	} 
+
+	if (options.DC_OP) {
+		x_temp = calloc(1, sizeof(gsl_vector *));
+		if (!x_temp) {
+			print_error("iterative_equation_solve", ERR_NO_MEM, "x_temp not able to calloc");
+		}
+		// x_temp[0] = calloc(A->n, sizeof(double));
+		x_temp[0] = gsl_vector_calloc(B->size);
+		if (!x_temp[0]) {
+			print_error("iterative_equation_solve", ERR_NO_MEM, "x_temp[0] not able to calloc");
+		}
+
+		if (helper.use_iterations_cg) {
+			sparse_cg_iter(A, B, &x_temp[0], helper.tolerance);
+		}
+		else if (helper.use_iterations) {
+			sparse_bi_cg_iter(A, B, &x_temp[0], helper.tolerance);
+		}
+	}
+	else if (options.DC_OP == false && options.DC_SWEEP) {
+		double total_steps=(options.DC_SWEEP->end_val - options.DC_SWEEP->start_val)/options.DC_SWEEP->increment;
+		int b_pos=-1;
+		int find_pos_ret[2]={0};
+
+		find_b_pos (options.DC_SWEEP->variable_name, options.DC_SWEEP->variable_type, head, find_pos_ret, pair_head);
+
+		if (options.DC_SWEEP->variable_type == 'v') {
+			b_pos = find_pos_ret[0];
+		}
+
+		if (find_pos_ret[0] == -1 || find_pos_ret[1] == -1) {
+			fprintf(stderr, "\n%sElement %c%s not found in netlist!\nAborting DC sweep%s\n", RED, options.DC_SWEEP->variable_type, options.DC_SWEEP->variable_name, RESET);
+		}
+
+		x_temp = calloc(((int)total_steps+1), sizeof(gsl_vector *));
+		if (!x_temp) {
+			print_error("equation_make", ERR_NO_MEM, "Solutions vector couldn't reallocate");
+		}
+
+		for (int step=0;step<=(int)total_steps;step++) {
+			x_temp[step] = gsl_vector_calloc(B->size);
+			
+			if (options.DC_SWEEP->variable_type == 'v') {
+				gsl_vector_set(B, helper.amount_of_nodes+b_pos, options.DC_SWEEP->start_val + step*(options.DC_SWEEP->increment));
+			}
+			else if( options.DC_SWEEP->variable_type == 'i') {
+				if (find_pos_ret[0] > 0) {
+					gsl_vector_set(B, find_pos_ret[0]-1, -(options.DC_SWEEP->start_val + step*(options.DC_SWEEP->increment)));
+				}
+				if (find_pos_ret[1] > 0) {
+					gsl_vector_set(B, find_pos_ret[1]-1, options.DC_SWEEP->start_val + step*(options.DC_SWEEP->increment));
+				}
+			}
+			
+			if (helper.use_iterations_cg) {
+				sparse_cg_iter(A, B, &x_temp[step], helper.tolerance);
+			}
+			else if (helper.use_iterations) {
+				sparse_bi_cg_iter(A, B, &x_temp[step], helper.tolerance);
+			}
+		}
+	}
+	*x = x_temp;
 }
 
 void cg_solve(gsl_matrix *A, gsl_vector *b, gsl_vector **x, double itol, int n) {
