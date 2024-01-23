@@ -128,11 +128,23 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 
 			//time to parse the transient part if it exists
 			if(line_array[4] != NULL){
-				temptestline = (strstr(line_array[4],"exp")!=NULL)?current->tran_data_type=1,testline=temptestline:current->tran_data_type,testline;
-				temptestline = (strstr(line_array[4],"sin")!=NULL)?current->tran_data_type=2,testline=temptestline:current->tran_data_type,testline;
-				temptestline = (strstr(line_array[4],"pulse")!=NULL)?current->tran_data_type=3,testline=temptestline:current->tran_data_type,testline;
-				temptestline = (strstr(line_array[4],"pwl")!=NULL)?current->tran_data_type=4,testline=temptestline:current->tran_data_type,testline;
-				if(temptestline == NULL){
+				if(temptestline = (strstr(line_array[4],"exp")!=NULL)){
+					current->tran_data_type=1;
+					testline=temptestline;
+				}
+				if(temptestline = (strstr(line_array[4],"sin")!=NULL)){
+					current->tran_data_type=2;
+					testline=temptestline;
+				}
+				if(temptestline = (strstr(line_array[4],"pulse")!=NULL)){
+					current->tran_data_type=3;
+					testline=temptestline;
+				}
+				if(temptestline = (strstr(line_array[4],"pwl")!=NULL)){
+					current->tran_data_type=4;
+					testline=temptestline;
+				}
+				if(testline == NULL){
 					testline = NULL;
 					current->tran_data_type = 0;
 					fprintf(stderr, "\nWrong format for transient analysis\n");
