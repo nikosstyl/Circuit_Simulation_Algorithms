@@ -13,6 +13,11 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 	char plot_line_buffer[MAX_LINE_BUFF_LEN]={'\0'};
 	int true_size = STARTING_ARR_NUM;
 	char temp_element[MAX_CHAR_NUM]={'\0'};
+	char *testline = NULL, *temptestline = NULL;
+	EXP_T *exp_data = NULL;
+	SIN_T *sin_data = NULL;
+	PULSE_T *pulse_data = NULL;
+	PWL_T *pwl_data = NULL;
 
 	// Create line split 2D array
 	line_array = calloc(NUM_OF_ELEMENT_DATA, sizeof(char*));
@@ -73,7 +78,7 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 
 		if (line_array[0][0] != '.') { // Ignore comments that start with *
 			// Copy every element's value such as type, name, nodes etc
-			fscanf(input_file, "%s %s %s\n", line_array[1], line_array[2], line_array[3]);
+			fscanf(input_file, "%s %s %s%[^\n]\n", line_array[1], line_array[2], line_array[3],line_array[4]);
 			for (int i=1;i<NUM_OF_ELEMENT_DATA;i++) {
 				strToLower(line_array[i]);
 			}
@@ -120,6 +125,110 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 			// Go to the next element
 			current->next = calloc(1, sizeof(Element));
 			current->next->prev = current;
+
+			//time to parse the transient part if it exists
+			if(line_array[4] != NULL){
+				temptestline = (strstr(line_array[4],"exp")!=NULL)?current->tran_data_type=1,testline=temptestline:current->tran_data_type,testline;
+				temptestline = (strstr(line_array[4],"sin")!=NULL)?current->tran_data_type=2,testline=temptestline:current->tran_data_type,testline;
+				temptestline = (strstr(line_array[4],"pulse")!=NULL)?current->tran_data_type=3,testline=temptestline:current->tran_data_type,testline;
+				temptestline = (strstr(line_array[4],"pwl")!=NULL)?current->tran_data_type=4,testline=temptestline:current->tran_data_type,testline;
+				if(temptestline == NULL){
+					testline = NULL;
+					current->tran_data_type = 0;
+					fprintf(stderr, "\nWrong format for transient analysis\n");
+					exit(1);
+				}
+				switch(current->tran_data_type){
+					case 1:
+						{
+							current->transient_type_info = malloc(sizeof(EXP_T));
+							if(current->transient_type_info == NULL){
+        						fprintf(stderr, "Memory allocation failed\n");
+        						exit(1);
+    						}
+							exp_data = (EXP_T*) current->transient_type_info;
+							int res = sscanf(testline, "exp (%lf %lf %lf %lf %lf %lf)",&exp_data->i1, &exp_data->i2, &exp_data->td1, &exp_data->tc1, &exp_data->td2, &exp_data->tc2);
+							if(res != 6){
+        						fprintf(stderr, "Parsing failed\n");
+        						// Handle parsing failure as needed (e.g., free allocated memory)
+        						free(exp_data);
+        						exit(1);
+							}	
+							break;
+						}
+					case 2:
+						{
+							current->transient_type_info = malloc(sizeof(SIN_T));
+							if(current->transient_type_info == NULL){
+        						fprintf(stderr, "Memory allocation failed\n");
+        						exit(1);
+    						}
+							sin_data = (SIN_T*) current->transient_type_info;
+							int res = sscanf(testline, "sin (%lf %lf %lf %lf %lf %lf)",&sin_data->i1, &sin_data->ia, &sin_data->fr, &sin_data->td, &sin_data->df, &sin_data->ph);
+							if(res != 6){
+        						fprintf(stderr, "Parsing failed\n");
+        						// Handle parsing failure as needed (e.g., free allocated memory)
+        						free(sin_data);
+        						exit(1);
+							}	
+							break;
+						}
+					case 3:
+						{
+							current->transient_type_info = malloc(sizeof(PULSE_T));
+							if(current->transient_type_info == NULL){
+        						fprintf(stderr, "Memory allocation failed\n");
+        						exit(1);
+    						}
+							pulse_data = (PULSE_T*) current->transient_type_info;
+							int res = sscanf(testline, "pulse (%lf %lf %lf %lf %lf %lf %lf)",&pulse_data->i1, &pulse_data->i2, &pulse_data->td, &pulse_data->tr, &pulse_data->tf, &pulse_data->pw, &pulse_data->per);
+							if(res != 7){
+        						fprintf(stderr, "Parsing failed\n");
+        						// Handle parsing failure as needed (e.g., free allocated memory)
+        						free(pulse_data);
+        						exit(1);
+							}	
+							break;	
+						}
+					case 4:
+						{
+							char *stringcheck = testline;
+							int tuples_counter = 0;
+
+							while(*stringcheck){
+								if(*stringcheck == '('){
+									tuples_counter++;
+								}
+								stringcheck++;
+							}
+
+							current->transient_type_info = malloc(sizeof(PWL_T)*tuples_counter);
+							if(current->transient_type_info == NULL){
+        						fprintf(stderr, "Memory allocation failed\n");
+        						exit(1);
+    						}
+							pwl_data = (PWL_T*) current->transient_type_info;
+							stringcheck = testline;
+							for(int i=0; i < count; i++){
+								int res = sscanf(stringcheck, "(%lf %lf)",&pwl_data[i]->val1, &pwl_data[i]->val2);
+								if (res != 2) {
+									fprintf(stderr, "Parsing failed\n");
+									// Handle parsing failure as needed (e.g., free allocated memory)
+									free(current->transient_type_info);
+									exit(1);
+								}
+								while (*stringcheck && (*stringcheck != '(')) {
+										stringcheck++;
+									}
+								}
+							}
+							break;	
+						}				
+				}
+			}
+			else{
+				current->tran_data_type = 0;
+			}
 		}
 		else {
 			if (strcmp(line_array[0], OPTIONS) == 0) { // .OPTIONS statements

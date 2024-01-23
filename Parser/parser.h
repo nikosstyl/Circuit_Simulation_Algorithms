@@ -42,7 +42,42 @@ static const char YELLOW[] = "\x1b[33m";
 static const char BLUE[] = "\x1b[34m";
 static const char RESET[] = "\x1b[0m";
 
+struct pwl_info{
+	double val1;
+	double val2;
+}; 
+typedef struct pwl_info PWL_T;
 
+struct exp_info{
+	double i1;
+	double i2;
+	double td1;
+	double td2;
+	double tc1;
+	double tc2;
+};
+typedef struct exp_info EXP_T;
+
+struct sin_info{
+	double i1;
+	double ia;
+	double fr;
+	double td;
+	double df;
+	double ph;
+};
+typedef struct sin_info SIN_T;
+
+struct pulse_info{
+	double i1;
+	double i2;
+	double td;
+	double tr;
+	double tf;
+	double pw;
+	double per;
+};
+typedef struct pulse_info PULSE_T;
 // Struct of an element
 // Data for the simulation
 struct sim_element {
@@ -51,8 +86,14 @@ struct sim_element {
 	char* node_p;
 	char* node_n;
 	double value;
+	int tran_data_type;	//0 if no tran is present, 1 for exp, 2 for sin, 3 for pulse, 4 for pwl
 	int group_flag;
 	int position_in_vector_B;
+
+	union{
+		void *transient_type_info;
+		PWL_T *pwl_array;
+	};
 	//group_flag determines the group of the element. If set to 0 then KCL is needed to describe it, if set to 1, KVL is needed. 
 	// Hashed nodes
 	// unsigned long node_p_hash;
