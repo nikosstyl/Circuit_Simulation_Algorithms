@@ -231,7 +231,6 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 								}
 								while (*stringcheck && (*stringcheck != '(')) {
 										stringcheck++;
-									}
 								}
 							}
 							break;	
