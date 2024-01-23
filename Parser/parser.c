@@ -78,7 +78,7 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 
 		if (line_array[0][0] != '.') { // Ignore comments that start with *
 			// Copy every element's value such as type, name, nodes etc
-			fscanf(input_file, "%s %s %s%[^\n]\n", line_array[1], line_array[2], line_array[3],line_array[4]);
+			fscanf(input_file, "%s %s %s %[^\n]", line_array[1], line_array[2], line_array[3],line_array[4]);
 			for (int i=1;i<NUM_OF_ELEMENT_DATA;i++) {
 				strToLower(line_array[i]);
 			}
@@ -125,9 +125,8 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 			// Go to the next element
 			current->next = calloc(1, sizeof(Element));
 			current->next->prev = current;
-
 			//time to parse the transient part if it exists
-			if(line_array[4] != NULL){
+			if(strlen(line_array[4]) != 0){
 				if((temptestline = strstr(line_array[4],"exp"))!=NULL){
 					current->tran_data_type=1;
 					testline=temptestline;
