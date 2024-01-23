@@ -209,8 +209,8 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
     						}
 							pwl_data = (PWL_T*) current->transient_type_info;
 							stringcheck = testline;
-							for(int i=0; i < count; i++){
-								int res = sscanf(stringcheck, "(%lf %lf)",&pwl_data[i]->val1, &pwl_data[i]->val2);
+							for(int i=0; i < tuples_counter; i++){
+								int res = sscanf(stringcheck, "(%lf %lf)",&pwl_data[i].val1, &pwl_data[i].val2);
 								if (res != 2) {
 									fprintf(stderr, "Parsing failed\n");
 									// Handle parsing failure as needed (e.g., free allocated memory)
