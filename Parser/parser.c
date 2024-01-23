@@ -128,19 +128,19 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 
 			//time to parse the transient part if it exists
 			if(line_array[4] != NULL){
-				if(temptestline = (strstr(line_array[4],"exp")!=NULL)){
+				if((temptestline = strstr(line_array[4],"exp"))!=NULL){
 					current->tran_data_type=1;
 					testline=temptestline;
 				}
-				if(temptestline = (strstr(line_array[4],"sin")!=NULL)){
+				if((temptestline = strstr(line_array[4],"sin"))!=NULL){
 					current->tran_data_type=2;
 					testline=temptestline;
 				}
-				if(temptestline = (strstr(line_array[4],"pulse")!=NULL)){
+				if((temptestline = strstr(line_array[4],"pulse"))!=NULL){
 					current->tran_data_type=3;
 					testline=temptestline;
 				}
-				if(temptestline = (strstr(line_array[4],"pwl")!=NULL)){
+				if((temptestline = strstr(line_array[4],"pwl"))!=NULL){
 					current->tran_data_type=4;
 					testline=temptestline;
 				}
