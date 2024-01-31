@@ -626,13 +626,9 @@ void sparse_direct_equation_solve(cs *A, gsl_vector *B, gsl_vector ***x, SpiceAn
 		int b_pos=-1;
 		int find_pos_ret[2]={0};
 
-		find_b_pos(options.DC_SWEEP->variable_name, options.DC_SWEEP->variable_type, head, find_pos_ret, pair_head);
+		b_pos = find_b_pos(options.DC_SWEEP->variable_name, options.DC_SWEEP->variable_type, head, find_pos_ret, pair_head);
 
-		if (options.DC_SWEEP->variable_type == 'v') {
-			b_pos = find_pos_ret[0];
-		}
-
-		if (find_pos_ret[0] == -1 || find_pos_ret[1] == -1) {
+		if (find_pos_ret[0] == -1 || find_pos_ret[1] == -1 || b_pos == -1) {
 			fprintf(stderr, "\n%sElement %c%s not found in netlist!\nAborting DC sweep%s\n", RED, options.DC_SWEEP->variable_type, options.DC_SWEEP->variable_name, RESET);
 			return;
 		}
@@ -648,7 +644,7 @@ void sparse_direct_equation_solve(cs *A, gsl_vector *B, gsl_vector ***x, SpiceAn
 			temp = gsl_vector_calloc(helper.amount_of_nodes+helper.group2_size);
 
 			if (options.DC_SWEEP->variable_type == 'v') {
-				gsl_vector_set(B, helper.amount_of_nodes+b_pos, options.DC_SWEEP->start_val + step*(options.DC_SWEEP->increment));
+				gsl_vector_set(B, helper.amount_of_nodes + b_pos, options.DC_SWEEP->start_val + step*(options.DC_SWEEP->increment));
 			}
 			else if( options.DC_SWEEP->variable_type == 'i') {
 				if (find_pos_ret[0] > 0) {
@@ -710,13 +706,9 @@ void sparse_iterative_equation_solve (const cs *A, gsl_vector *B, gsl_vector ***
 		int b_pos=-1;
 		int find_pos_ret[2]={0};
 
-		find_b_pos (options.DC_SWEEP->variable_name, options.DC_SWEEP->variable_type, head, find_pos_ret, pair_head);
+		b_pos = find_b_pos (options.DC_SWEEP->variable_name, options.DC_SWEEP->variable_type, head, find_pos_ret, pair_head);
 
-		if (options.DC_SWEEP->variable_type == 'v') {
-			b_pos = find_pos_ret[0];
-		}
-
-		if (find_pos_ret[0] == -1 || find_pos_ret[1] == -1) {
+		if (find_pos_ret[0] == -1 || find_pos_ret[1] == -1 || b_pos == -1) {
 			fprintf(stderr, "\n%sElement %c%s not found in netlist!\nAborting DC sweep%s\n", RED, options.DC_SWEEP->variable_type, options.DC_SWEEP->variable_name, RESET);
 		}
 

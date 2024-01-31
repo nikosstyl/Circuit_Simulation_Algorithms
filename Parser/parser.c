@@ -78,7 +78,8 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 
 		if (line_array[0][0] != '.') { // Ignore comments that start with *
 			// Copy every element's value such as type, name, nodes etc
-			fscanf(input_file, "%s %s %s %[^\n]", line_array[1], line_array[2], line_array[3],line_array[4]);
+			// fscanf(input_file, "%s %s %s %[^\n]", line_array[1], line_array[2], line_array[3],line_array[4]);
+			fscanf(input_file, "%s %s %s", line_array[1], line_array[2], line_array[3]);
 			for (int i=1;i<NUM_OF_ELEMENT_DATA;i++) {
 				strToLower(line_array[i]);
 			}
@@ -126,28 +127,33 @@ void parser(FILE *input_file, Element **head, NodePair **head_node_pair, RetHelp
 			current->next = calloc(1, sizeof(Element));
 			current->next->prev = current;
 			//time to parse the transient part if it exists
-			if(strlen(line_array[4]) != 0){
-				if((temptestline = strstr(line_array[4],"exp"))!=NULL){
-					current->tran_data_type=1;
-					testline=temptestline;
-				}
-				if((temptestline = strstr(line_array[4],"sin"))!=NULL){
-					current->tran_data_type=2;
-					testline=temptestline;
-				}
-				if((temptestline = strstr(line_array[4],"pulse"))!=NULL){
-					current->tran_data_type=3;
-					testline=temptestline;
-				}
-				if((temptestline = strstr(line_array[4],"pwl"))!=NULL){
-					current->tran_data_type=4;
-					testline=temptestline;
-				}
-				if(testline == NULL){
-					testline = NULL;
-					current->tran_data_type = 0;
-					fprintf(stderr, "\nWrong format for transient analysis\n");
-					exit(1);
+			if (current->type_of_element == 'v' || current->type_of_element == 'i') {
+				fgets(line_array[4], MAX_CHAR_NUM, input_file);
+				if(strlen(line_array[4]) != 0){
+					if((temptestline = strstr(line_array[4],"exp"))!=NULL){
+						current->tran_data_type=1;
+						testline=temptestline;
+					}
+					if((temptestline = strstr(line_array[4],"sin"))!=NULL){
+						current->tran_data_type=2;
+						testline=temptestline;
+					}
+					if((temptestline = strstr(line_array[4],"pulse"))!=NULL){
+						current->tran_data_type=3;
+						testline=temptestline;
+					}
+					if((temptestline = strstr(line_array[4],"pwl"))!=NULL){
+						current->tran_data_type=4;
+						testline=temptestline;
+					}
+					// if(testline == NULL){
+					// 	testline = NULL;
+					// 	current->tran_data_type = 0;
+					// 	fprintf(stderr, "\nWrong format for transient analysis\n");
+					// 	// exit(1);
+					// 	abort();
+					// }
+					memset(line_array[4], 0, MAX_CHAR_NUM);
 				}
 				switch(current->tran_data_type){
 					case 1:
@@ -527,28 +533,29 @@ void print_error (char* program_name ,int error_code, const char* comment) {
 	switch (error_code) {
 		case 1: { // No input file selected
 			fprintf(stderr, "\n%s:\terror %d:\tNo input file selected!\n", program_name, error_code);
-			exit(-1);
+			// exit(-1);
 			break;
 		}
 		case 2: { // No file read
 			fprintf(stderr, "\n%s:\terror %d:\tInput file couldn't be opened!\n", program_name, error_code);
-			exit(-2);
+			// exit(-2);
 			break;
 		}
 		case 3: { // No memory
 			fprintf(stderr, "\n%s:\terror %d:\tNot enough memory!\n", program_name, error_code);
 			fprintf(stderr, "\t\tComment: %s\n", comment);
-			exit(-3);
+			// exit(-3);
 			break;
 		}
 		case 4: {
 			fprintf(stderr, "\n%s:\terror %d:\tGeneric error!\n", program_name, error_code);
 			fprintf(stderr, "\t\tComment: %s\n", comment);
-			exit(-4);
+			// exit(-4);
 			break;
 		}
 		default: {
 			break;
 		}
 	}
+	abort();
 }
